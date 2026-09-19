@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal de clientes — Ferreteria 360</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏗️</text></svg>">
+<link rel="stylesheet" href="assets/base.css">
+<style>
+  .linea-prod { display: grid; grid-template-columns: 1fr 130px 110px 34px; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(35,49,77,.6); }
+  .linea-prod:last-child { border-bottom: 0; }
+  .cant { display: flex; align-items: center; gap: 5px; }
+  .cant button { width: 27px; height: 27px; border-radius: 7px; border: 1px solid var(--linea); background: var(--tinta-3); color: var(--texto); cursor: pointer; font-size: 15px; line-height: 1; }
+  .cant button:hover { border-color: var(--acento); color: var(--acento); }
+  .cant input { width: 62px; text-align: center; padding: 5px; font-family: var(--mono); }
+  .resultado-busca { position: absolute; top: 100%; left: 0; right: 0; z-index: 20; background: var(--panel-2); border: 1px solid var(--linea); border-radius: var(--radio-s); max-height: 290px; overflow-y: auto; box-shadow: var(--sombra); }
+  .resultado-busca div { padding: 9px 12px; cursor: pointer; font-size: .85rem; border-bottom: 1px solid rgba(35,49,77,.5); }
+  .resultado-busca div:hover { background: var(--tinta-3); }
+  .paso { display: flex; align-items: center; gap: 5px; }
+  .paso i { width: 9px; height: 9px; border-radius: 50%; background: var(--tinta-3); border: 1px solid var(--linea); display: block; }
+  .paso i.ok { background: var(--verde); border-color: var(--verde); }
+  .paso i.actual { background: var(--acento); border-color: var(--acento); box-shadow: 0 0 0 3px rgba(245,165,36,.2); }
+  .paso s { width: 16px; height: 1px; background: var(--linea); display: block; }
+</style>
+</head>
+<body>
+<div id="barra"></div>
+
+<main class="contenedor seccion-s">
+  <!-- ------------------------------------------------------------ LOGIN -->
+  <div id="login">
+    <span class="etiqueta cian">Modulo 03</span>
+    <h1 style="margin-top:10px">Portal privado de clientes fijos</h1>
+    <p style="max-width:74ch">
+      Sus clientes recurrentes entran con su clave y se autoatienden: hacen su pedido,
+      cotizan en tiempo real con su lista de precios, repiten compras anteriores y consultan
+      cupo, cartera y estado de despacho. Sin ocupar el telefono del local.
+    </p>
+
+    <div class="grid g-lateral" style="margin-top:26px">
+      <div class="tarjeta" style="max-width:460px">
+        <h3>Ingreso de cliente</h3>
+        <div class="campo" style="margin-top:14px">
+          <label for="quien">Cliente</label>
+          <select id="quien"></select>
+        </div>
+        <div class="campo">
+          <label for="pin">Clave de 4 digitos</label>
+          <input id="pin" type="password" maxlength="4" placeholder="••••" inputmode="numeric">
+        </div>
+        <button class="boton" id="entrar" style="width:100%;margin-top:6px">Entrar al portal</button>
+        <p class="micro" style="margin:12px 0 0">Demostracion: la clave de cada cliente aparece al seleccionarlo.</p>
+        <div id="pista" class="aviso cian" style="margin-top:10px;display:none"></div>
+      </div>
+
+      <div class="tarjeta">
+        <h3>Lo que el cliente puede hacer solo</h3>
+        <ul class="mini" style="padding-left:18px;margin:10px 0 0;color:var(--texto-2);line-height:1.9">
+          <li>Ver <b>su</b> lista de precios, ya con el descuento de su nivel aplicado.</li>
+          <li>Armar el pedido desde sus productos habituales en menos de un minuto.</li>
+          <li>Cotizar cualquier producto del catalogo en tiempo real y guardar la cotizacion con numero.</li>
+          <li>Programar la fecha de entrega de los proximos dias.</li>
+          <li>Consultar cupo de credito disponible y saldo de cartera.</li>
+          <li>Seguir el estado de cada despacho sin llamar.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------------------ PORTAL -->
+  <div id="portal" style="display:none">
+    <div class="fila-sb wrap" style="margin-bottom:18px">
+      <div>
+        <span class="etiqueta cian" id="p-nivel"></span>
+        <h1 style="margin:10px 0 0;font-size:1.9rem" id="p-nombre"></h1>
+        <p class="mini" style="margin:3px 0 0" id="p-contacto"></p>
+      </div>
+      <button class="boton fantasma s" id="salir">Salir</button>
+    </div>
+
+    <div class="grid g4" id="p-kpis" style="margin-bottom:20px"></div>
+
+    <div class="tabs">
+      <button class="tab activo" data-t="pedido">Pedido rapido</button>
+      <button class="tab" data-t="cotizar">Cotizador en tiempo real</button>
+      <button class="tab" data-t="pedidos">Mis pedidos</button>
+      <button class="tab" data-t="cotizaciones">Mis cotizaciones</button>
+    </div>
+    <div id="vista"></div>
+  </div>
+</main>
+<div id="pie"></div>
+
+<script type="module">
+import { api, barra, pie, COP, numero, pct, esc, $, $$, aviso } from './assets/app.js';
+
+$('#barra').innerHTML = barra('/portal');
+$('#pie').innerHTML = pie();
+
+const { contactos } = await api.get('/api/whatsapp/contactos');
+const PINES = { 'C-001': '1425', 'C-002': '2210', 'C-003': '0704', 'C-004': '3388', 'C-005': '5519', 'C-006': '6642', 'C-007': '7731', 'C-008': '8890' };
+$('#quien').innerHTML = contactos.map((c) => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
+
+function pista() {
+  const id = $('#quien').value;
+  $('#pista').style.display = 'block';
+  $('#pista').innerHTML = `Clave de demostracion para este cliente: <b class="mono">${PINES[id] || '----'}</b>`;
+}
+$('#quien').addEventListener('change', pista);
+pista();
+
+let datos = null;
+let carrito = [];
+
+$('#entrar').addEventListener('click', async () => {
+  try {
+    await api.post('/api/portal/login', { identificador: $('#quien').value, pin: $('#pin').value });
+    await cargarPortal($('#quien').value);
+  } catch (e) {
+    aviso('Clave incorrecta. ' + e.message, 'error');
+  }
+});
+$('#pin').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#entrar').click(); });
+$('#salir').addEventListener('click', () => { location.reload(); });
+
+async function cargarPortal(id) {
+  datos = await api.get(`/api/portal/${id}/resumen`);
+  const c = datos.cliente, k = datos.indicadores;
+  $('#login').style.display = 'none';
+  $('#portal').style.display = 'block';
+  $('#p-nombre').textContent = c.nombre;
+  $('#p-nivel').textContent = `${c.nivelNombre} · ${pct(c.descuento, 0)} de descuento`;
+  $('#p-contacto').textContent = `${c.contacto} · ${c.whatsapp} · ${c.direccion}`;
+
+  $('#p-kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-label">Cupo disponible</div>
+      <div class="kpi-valor">${COP(c.disponible)}</div>
+      <div class="barra-prog" style="margin-top:8px"><i style="width:${Math.min(100, (c.saldoCartera / c.cupoCredito) * 100)}%;background:${c.saldoCartera / c.cupoCredito > .8 ? 'var(--rojo)' : 'var(--acento)'}"></i></div>
+      <div class="kpi-pie">Usado ${COP(c.saldoCartera)} de ${COP(c.cupoCredito)}</div></div>
+    <div class="kpi"><div class="kpi-label">Pedidos en curso</div><div class="kpi-valor">${k.pedidosActivos}</div>
+      <div class="kpi-pie">${k.pedidosTotales} pedidos historicos</div></div>
+    <div class="kpi"><div class="kpi-label">Compra acumulada</div><div class="kpi-valor">${COP(k.compraAcumulada)}</div>
+      <div class="kpi-pie">Ultimo pedido: ${esc(k.ultimoPedido || '-')}</div></div>
+    <div class="kpi"><div class="kpi-label">Ahorro por su nivel</div><div class="kpi-valor" style="color:var(--verde)">${COP(k.ahorroPorNivel)}</div>
+      <div class="kpi-pie">Plazo de pago: ${c.plazoDias} dias</div></div>`;
+
+  $$('.tab').forEach((t) => t.addEventListener('click', () => {
+    $$('.tab').forEach((x) => x.classList.remove('activo'));
+    t.classList.add('activo');
+    pintar(t.dataset.t);
+  }));
+  pintar('pedido');
+}
+
+// ------------------------------------------------------------- carrito ---
+function totalCarrito() {
+  return carrito.reduce((a, i) => a + i.precio * i.cantidad, 0);
+}
+
+function agregar(sku, nombre, unidad, precio, precioLista, stock, cantidad = 1) {
+  const ex = carrito.find((i) => i.sku === sku);
+  if (ex) ex.cantidad += cantidad;
+  else carrito.push({ sku, nombre, unidad, precio, precioLista, stock, cantidad });
+  pintar($('.tab.activo').dataset.t);
+}
+
+function cajaCarrito() {
+  if (!carrito.length) return '<p class="nada">Su pedido esta vacio.</p>';
+  const total = totalCarrito();
+  const lista = carrito.reduce((a, i) => a + i.precioLista * i.cantidad, 0);
+  return `
+    ${carrito.map((i, idx) => `
+      <div class="linea-prod">
+        <div><div class="mini negro" style="font-weight:600">${esc(i.nombre)}</div>
+          <div class="micro">${COP(i.precio)} / ${esc(i.unidad)} ${i.stock < i.cantidad ? '<span style="color:var(--rojo)">· solo hay ' + numero(i.stock) + '</span>' : ''}</div></div>
+        <div class="cant">
+          <button data-menos="${idx}">−</button>
+          <input type="number" min="0" step="1" value="${i.cantidad}" data-cant="${idx}">
+          <button data-mas="${idx}">+</button>
+        </div>
+        <div class="num negro">${COP(i.precio * i.cantidad)}</div>
+        <button class="boton fantasma s" data-quitar="${idx}" style="padding:4px 8px">×</button>
+      </div>`).join('')}
+    <hr class="separador">
+    <div class="fila-sb"><span class="mini">Precio de lista</span><span class="mono">${COP(lista)}</span></div>
+    <div class="fila-sb"><span class="mini">Su descuento ${esc(datos.cliente.nivelNombre)}</span>
+      <span class="mono" style="color:var(--verde)">-${COP(lista - total)}</span></div>
+    <div class="fila-sb" style="margin-top:8px">
+      <span style="font-weight:700">Total</span>
+      <span class="acento" style="font-size:1.5rem;font-weight:800">${COP(total)}</span></div>
+    <div class="micro">IVA incluido. ${total > datos.cliente.disponible ? '<span style="color:var(--rojo)">Excede su cupo disponible.</span>' : 'Dentro de su cupo disponible.'}</div>`;
+}
+
+function enlazarCarrito(raiz) {
+  raiz.querySelectorAll('[data-mas]').forEach((b) => b.onclick = () => { carrito[b.dataset.mas].cantidad++; pintar($('.tab.activo').dataset.t); });
+  raiz.querySelectorAll('[data-menos]').forEach((b) => b.onclick = () => {
+    const i = carrito[b.dataset.menos];
+    i.cantidad = Math.max(0, i.cantidad - 1);
+    if (!i.cantidad) carrito.splice(b.dataset.menos, 1);
+    pintar($('.tab.activo').dataset.t);
+  });
+  raiz.querySelectorAll('[data-quitar]').forEach((b) => b.onclick = () => { carrito.splice(b.dataset.quitar, 1); pintar($('.tab.activo').dataset.t); });
+  raiz.querySelectorAll('[data-cant]').forEach((el) => el.onchange = () => {
+    const v = Math.max(0, Number(el.value) || 0);
+    if (!v) carrito.splice(el.dataset.cant, 1); else carrito[el.dataset.cant].cantidad = v;
+    pintar($('.tab.activo').dataset.t);
+  });
+}
+
+// -------------------------------------------------------------- vistas ---
+async function pintar(tab) {
+  const v = $('#vista');
+
+  if (tab === 'pedido') {
+    v.innerHTML = `<div class="grid g-lateral">
+      <div class="tarjeta">
+        <h3>Sus productos habituales</h3>
+        <p class="mini" style="margin:4px 0 12px">Lo que mas compra, con su precio y existencias de hoy.</p>
+        ${datos.habituales.map((h) => `
+          <div class="linea-prod" style="grid-template-columns:1fr 110px 96px">
+            <div><div class="mini negro" style="font-weight:600">${esc(h.nombre)}</div>
+              <div class="micro">${h.stock > 0 ? numero(h.stock) + ' ' + esc(h.unidad) + ' disponibles' : '<span style="color:var(--rojo)">agotado</span>'}
+              &middot; lista <s>${COP(h.precioLista)}</s></div></div>
+            <div class="num acento">${COP(h.precio)}</div>
+            <button class="boton s" data-add="${esc(h.sku)}">Agregar</button>
+          </div>`).join('')}
+        <hr class="separador">
+        <button class="boton fantasma s" id="repetir">Repetir mi ultimo pedido</button>
+      </div>
+
+      <div class="tarjeta">
+        <h3>Su pedido</h3>
+        <div id="caja" style="margin-top:10px">${cajaCarrito()}</div>
+        <hr class="separador">
+        <div class="campo"><label for="fecha">Fecha de entrega</label><input type="date" id="fecha"></div>
+        <div class="campo"><label for="obra">Obra / destino</label>
+          <select id="obra">${datos.cliente.obras.map((o) => `<option>${esc(o)}</option>`).join('')}<option>Otro destino</option></select></div>
+        <div class="campo"><label for="notas">Observaciones</label><input id="notas" placeholder="Ej: entregar por la puerta lateral"></div>
+        <button class="boton" id="confirmar" style="width:100%" ${carrito.length ? '' : 'disabled'}>Confirmar pedido</button>
+      </div></div>`;
+
+    const d = new Date(); d.setDate(d.getDate() + 1);
+    $('#fecha').value = d.toISOString().slice(0, 10);
+    $('#fecha').min = new Date().toISOString().slice(0, 10);
+    v.querySelectorAll('[data-add]').forEach((b) => b.onclick = () => {
+      const h = datos.habituales.find((x) => x.sku === b.dataset.add);
+      agregar(h.sku, h.nombre, h.unidad, h.precio, h.precioLista, h.stock);
+    });
+    enlazarCarrito(v);
+    $('#repetir').onclick = repetirUltimo;
+    $('#confirmar').onclick = confirmar;
+
+  } else if (tab === 'cotizar') {
+    v.innerHTML = `<div class="grid g-lateral">
+      <div class="tarjeta">
+        <h3>Cotizador en tiempo real</h3>
+        <p class="mini" style="margin:4px 0 12px">Busque en las ${'' /* conteo dinamico */}referencias del catalogo. El precio ya viene con su descuento.</p>
+        <div class="campo" style="position:relative">
+          <input id="busca" placeholder="Cemento, drywall, cable #12, porcelanato..." autocomplete="off">
+          <div id="res" class="resultado-busca" style="display:none"></div>
+        </div>
+        <div id="detalle"></div>
+      </div>
+      <div class="tarjeta">
+        <h3>Cotizacion</h3>
+        <div id="caja" style="margin-top:10px">${cajaCarrito()}</div>
+        <hr class="separador">
+        <div class="fila">
+          <button class="boton fantasma s" id="guardar" style="flex:1" ${carrito.length ? '' : 'disabled'}>Guardar cotizacion</button>
+          <button class="boton s" id="apedido" style="flex:1" ${carrito.length ? '' : 'disabled'}>Convertir en pedido</button>
+        </div>
+      </div></div>`;
+    enlazarCarrito(v);
+    enlazarBusqueda();
+    $('#guardar').onclick = guardarCotizacion;
+    $('#apedido').onclick = () => { $$('.tab')[0].click(); };
+
+  } else if (tab === 'pedidos') {
+    v.innerHTML = '<div class="tarjeta cargando">Cargando pedidos...</div>';
+    const { pedidos } = await api.get(`/api/portal/${datos.cliente.id}/pedidos?limite=25`);
+    v.innerHTML = `<div class="tarjeta">
+      <h3>Mis pedidos</h3>
+      <table style="margin-top:12px">
+        <thead><tr><th>Pedido</th><th>Entrega</th><th>Seguimiento</th><th class="der">Total</th><th>Pago</th></tr></thead>
+        <tbody>${pedidos.map((p) => `
+          <tr>
+            <td><div class="mono negro">${esc(p.id)}</div><div class="micro">${p.items.length} lineas · ${esc(p.canal)}</div></td>
+            <td><div class="mini">${esc(p.seguimiento?.etiqueta || p.fechaEntrega)}</div>
+              <div class="micro">${esc(p.entrega)}</div></td>
+            <td><div class="paso">${(p.seguimiento?.pasos || []).map((s, i) =>
+                `${i ? '<s></s>' : ''}<i class="${s.actual ? 'actual' : s.hecho ? 'ok' : ''}" title="${esc(s.estado)}"></i>`).join('')}</div>
+              <div class="micro" style="margin-top:3px">${esc(p.estado)}</div></td>
+            <td class="num negro">${COP(p.total)}</td>
+            <td><span class="etiqueta ${p.pago === 'credito' ? 'morada' : 'verde'}">${esc(p.pago)}</span></td>
+          </tr>`).join('') || '<tr><td colspan="5" class="nada">Sin pedidos</td></tr>'}</tbody>
+      </table></div>`;
+
+  } else {
+    v.innerHTML = `<div class="tarjeta"><h3>Mis cotizaciones</h3>
+      <table style="margin-top:12px">
+        <thead><tr><th>Numero</th><th>Fecha</th><th>Vigente hasta</th><th>Obra</th><th class="der">Total</th></tr></thead>
+        <tbody>${datos.cotizaciones.map((q) => `
+          <tr><td class="mono negro">${esc(q.id)}</td><td class="mini">${esc(q.fecha)}</td>
+          <td class="mini">${esc(q.vence)}</td><td class="mini">${esc(q.obra || '—')}</td>
+          <td class="num negro">${COP(q.totales.total)}</td></tr>`).join('')
+          || '<tr><td colspan="5" class="nada">Aun no ha guardado cotizaciones</td></tr>'}</tbody>
+      </table></div>`;
+  }
+}
+
+function enlazarBusqueda() {
+  let t;
+  $('#busca').addEventListener('input', (e) => {
+    clearTimeout(t);
+    const q = e.target.value.trim();
+    if (q.length < 2) { $('#res').style.display = 'none'; return; }
+    t = setTimeout(async () => {
+      const r = await api.get('/api/catalogo?q=' + encodeURIComponent(q) + '&limite=12');
+      const d = Number(datos.cliente.descuento);
+      $('#res').style.display = 'block';
+      $('#res').innerHTML = r.productos.map((p) => `
+        <div data-sku="${esc(p.sku)}" data-nombre="${esc(p.nombre)}" data-unidad="${esc(p.unidad)}"
+             data-precio="${Math.round(p.precio * (1 - d))}" data-lista="${p.precio}" data-stock="${p.stock}">
+          <div class="fila-sb"><span class="negro">${esc(p.nombre)}</span>
+          <span class="mono acento">${COP(Math.round(p.precio * (1 - d)))}</span></div>
+          <div class="micro">${esc(p.categoriaNombre)} · ${p.stock > 0 ? numero(p.stock) + ' ' + esc(p.unidad) : 'agotado'}</div>
+        </div>`).join('') || '<div class="nada">Sin resultados</div>';
+      $('#res').querySelectorAll('[data-sku]').forEach((el) => el.onclick = () => {
+        agregar(el.dataset.sku, el.dataset.nombre, el.dataset.unidad,
+          Number(el.dataset.precio), Number(el.dataset.lista), Number(el.dataset.stock));
+        $('#busca').value = ''; $('#res').style.display = 'none';
+      });
+    }, 170);
+  });
+}
+
+async function repetirUltimo() {
+  const { pedidos } = await api.get(`/api/portal/${datos.cliente.id}/pedidos?limite=1`);
+  if (!pedidos.length) return aviso('No hay pedidos anteriores.', 'info');
+  carrito = pedidos[0].items.map((i) => ({
+    sku: i.sku, nombre: i.nombre, unidad: i.unidad,
+    precio: i.precioUnit, precioLista: i.precioLista || i.precioUnit, stock: 9999, cantidad: i.cantidad,
+  }));
+  aviso(`Cargado el pedido ${pedidos[0].id}. Ajuste las cantidades si necesita.`, 'ok');
+  pintar('pedido');
+}
+
+async function confirmar() {
+  try {
+    const r = await api.post(`/api/portal/${datos.cliente.id}/pedido`, {
+      items: carrito.map((i) => ({ sku: i.sku, cantidad: i.cantidad })),
+      fechaEntrega: $('#fecha').value,
+      obra: $('#obra').value,
+      notas: $('#notas').value,
+      pago: 'credito',
+      entrega: 'domicilio',
+    });
+    aviso(`Pedido ${r.pedido.id} confirmado para ${r.pedido.fechaEntrega}.`, 'ok');
+    carrito = [];
+    datos = await api.get(`/api/portal/${datos.cliente.id}/resumen`);
+    await cargarPortal(datos.cliente.id);
+    $$('.tab')[2].click();
+  } catch (e) {
+    const det = (e.detalle || []).map((d) => d.mensaje).join(' ');
+    aviso(`${e.message}. ${det}`, 'error');
+  }
+}
+
+async function guardarCotizacion() {
+  const r = await api.post('/api/cotizaciones', {
+    items: carrito.map((i) => ({ sku: i.sku, cantidad: i.cantidad })),
+    clienteId: datos.cliente.id,
+    origen: 'portal',
+    meta: { obra: datos.cliente.obras[0] || '' },
+  });
+  aviso(`Cotizacion ${r.cotizacion.id} guardada, vigente hasta ${r.cotizacion.vence}.`, 'ok');
+  datos = await api.get(`/api/portal/${datos.cliente.id}/resumen`);
+}
+</script>
+</body>
+</html>

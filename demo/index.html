@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ferreteria 360 — Plataforma integral</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔩</text></svg>">
+<link rel="stylesheet" href="assets/base.css">
+<style>
+  .hero { padding: 72px 0 44px; }
+  .hero h1 span { color: var(--acento); }
+  .hero p.lead { font-size: 1.12rem; max-width: 64ch; }
+  .modulo {
+    display: block; padding: 22px; border-radius: var(--radio);
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--linea); transition: .18s; color: inherit;
+  }
+  .modulo:hover { border-color: var(--acento); transform: translateY(-3px); text-decoration: none; box-shadow: var(--sombra); }
+  .modulo-n { font-family: var(--mono); font-size: .75rem; color: var(--acento); font-weight: 700; }
+  .modulo h3 { margin: 8px 0 6px; }
+  .modulo p { font-size: .88rem; margin: 0; }
+  .flujo { counter-reset: paso; display: grid; gap: 14px; }
+  .flujo li { display: flex; gap: 14px; align-items: flex-start; }
+  .flujo li::before {
+    counter-increment: paso; content: counter(paso);
+    flex: 0 0 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+    background: var(--tinta-3); color: var(--acento); font-weight: 800; font-size: .85rem;
+    border: 1px solid var(--linea);
+  }
+  .prod { display: flex; gap: 12px; align-items: center; padding: 11px 0; border-bottom: 1px solid rgba(35,49,77,.6); }
+  .prod:last-child { border-bottom: 0; }
+  .prod-img {
+    width: 40px; height: 40px; border-radius: 9px; flex: 0 0 auto; display: grid; place-items: center;
+    background: var(--tinta-3); font-size: .68rem; font-weight: 800; color: var(--acento); text-align: center;
+  }
+</style>
+</head>
+<body>
+<div id="barra"></div>
+
+<main class="contenedor">
+
+  <section class="hero">
+    <span class="etiqueta">Plataforma operativa &middot; no es una pagina de catalogo</span>
+    <h1>Su ferreteria vendiendo <span>24/7</span>,<br>con el inventario cuadrado al segundo.</h1>
+    <p class="lead">
+      Un solo sistema conecta cuatro frentes: el <b>simulador de materiales</b> que le dice al cliente
+      exactamente cuanto necesita, el <b>asistente de IA</b> que asesora como su mejor vendedor,
+      el <b>bot de WhatsApp</b> que recibe pedidos de sus clientes fijos a cualquier hora y el
+      <b>sistema interno</b> donde usted ve inventario, pedidos y plata en tiempo real.
+    </p>
+    <div class="fila wrap" style="margin-top:22px">
+      <a class="boton" href="simulador.html">Probar el simulador de obra</a>
+      <a class="boton fantasma" href="whatsapp.html">Ver el bot en accion</a>
+      <a class="boton fantasma" href="admin.html">Entrar al sistema interno</a>
+    </div>
+    <div class="grid g4" id="vivo" style="margin-top:34px"></div>
+  </section>
+
+  <section class="seccion-s">
+    <h2>Los cuatro modulos</h2>
+    <p>Cada uno resuelve un problema distinto y todos escriben sobre la misma base de datos.</p>
+    <div class="grid g4" style="margin-top:20px">
+      <a class="modulo" href="simulador.html">
+        <div class="modulo-n">MODULO 01</div>
+        <h3>Simulador de materiales</h3>
+        <p>Diez tipos de obra con formulas reales. El cliente pone las medidas y recibe la lista exacta
+        de material, la memoria de calculo y el presupuesto con su precio.</p>
+      </a>
+      <a class="modulo" href="asistente.html">
+        <div class="modulo-n">MODULO 02</div>
+        <h3>Asistente de IA propio</h3>
+        <p>No es un chat generico: solo sabe de su ferreteria. Responde con su stock, sus precios y
+        criterio tecnico de obra, y arma el pedido mientras conversa.</p>
+      </a>
+      <a class="modulo" href="portal.html">
+        <div class="modulo-n">MODULO 03</div>
+        <h3>Portal de clientes fijos</h3>
+        <p>Sus clientes entran con su clave, ven su lista de precios, cotizan en tiempo real,
+        repiten pedidos y consultan cupo, cartera y estado de despacho.</p>
+      </a>
+      <a class="modulo" href="admin.html">
+        <div class="modulo-n">MODULO 04</div>
+        <h3>Sistema interno</h3>
+        <p>Inventario valorizado, agenda de despachos de los proximos dias, cierre de caja,
+        estado de resultados, cartera y sugerencias de compra.</p>
+      </a>
+    </div>
+  </section>
+
+  <section class="seccion">
+    <div class="grid g-lateral">
+      <div>
+        <h2>Como se ve un dia normal</h2>
+        <p>El recorrido completo de un pedido, sin que nadie digite dos veces.</p>
+        <ol class="flujo lista-limpia" style="margin-top:18px">
+          <li><div><b>7:40 pm, domingo.</b> Un contratista fijo escribe por WhatsApp:
+            "necesito 30 bultos de cemento y 4 m3 de arena para el martes".</div></li>
+          <li><div><b>El bot lo reconoce por su numero</b>, le aplica su descuento de mayorista,
+            valida que haya existencias y que le alcance el cupo de credito.</div></li>
+          <li><div><b>Confirma y el pedido nace en el sistema</b> con fecha de entrega martes.
+            El inventario se descuenta en ese instante, no manana.</div></li>
+          <li><div><b>Lunes 7:00 am</b> el sistema ya tiene impresa la lista de alistamiento
+            agrupada por producto, no pedido por pedido.</div></li>
+          <li><div><b>Martes,</b> se marca despachado. La venta entra a la caja del dia,
+            al estado de resultados y a la cartera del cliente automaticamente.</div></li>
+        </ol>
+      </div>
+      <div class="tarjeta">
+        <div class="fila-sb"><h3 style="margin:0">Catalogo en linea</h3><span class="etiqueta cian" id="conteo">...</span></div>
+        <p class="mini" style="margin:8px 0 14px">Precios y existencias reales del sistema, actualizados al segundo.</p>
+        <div class="campo"><input id="busca" placeholder="Buscar: cemento, drywall, cable #12..."></div>
+        <div id="lista"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion-s">
+    <div class="tarjeta" style="border-color:rgba(245,165,36,.3)">
+      <div class="grid g-lateral" style="gap:26px">
+        <div>
+          <span class="etiqueta">Lo que cambia</span>
+          <h2 style="margin-top:12px">De "le confirmo y le aviso" a "esta confirmado"</h2>
+          <p style="margin-bottom:0">Hoy cada cotizacion larga se arma a mano, cada consulta de stock implica caminar
+          a la bodega y cada cierre exige estar en el local. Con la plataforma, el cliente se autoatiende,
+          el pedido queda documentado y usted revisa el negocio desde el celular.</p>
+        </div>
+        <div class="grid" style="gap:11px">
+          <div class="tarjeta-plana"><div class="kpi-label">Cotizacion de obra completa</div><div class="kpi-valor" style="font-size:1.25rem">de 40 min a <span class="acento">12 seg</span></div></div>
+          <div class="tarjeta-plana"><div class="kpi-label">Atencion fuera de horario</div><div class="kpi-valor" style="font-size:1.25rem">de 0 a <span class="acento">24/7</span></div></div>
+          <div class="tarjeta-plana"><div class="kpi-label">Descuadre de inventario</div><div class="kpi-valor" style="font-size:1.25rem">trazado <span class="acento">movimiento a movimiento</span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+<div id="pie"></div>
+
+<script type="module">
+import { api, barra, pie, COP, COPcorto, numero, esc, $ } from './assets/app.js';
+
+$('#barra').innerHTML = barra('/');
+$('#pie').innerHTML = pie();
+
+const salud = await api.get('/api/salud');
+const dash = await api.get('/api/admin/dashboard').catch(() => null);
+
+$('#vivo').innerHTML = [
+  ['Referencias en catalogo', numero(salud.productos), 'con precio y stock en linea'],
+  ['Clientes fijos activos', numero(salud.clientes), 'con precio y cupo propio'],
+  ['Pedidos gestionados', numero(salud.pedidos), 'historicos en el sistema'],
+  ['Pedidos por despachar', numero(dash?.kpis?.pedidosPendientes ?? 0), 'programados para los proximos dias'],
+].map(([l, v, p]) => `<div class="kpi"><div class="kpi-label">${l}</div><div class="kpi-valor">${v}</div><div class="kpi-pie">${p}</div></div>`).join('');
+
+const cat = await api.get('/api/catalogo?limite=200');
+$('#conteo').textContent = `${cat.total} referencias`;
+
+function pintar(lista) {
+  $('#lista').innerHTML = lista.slice(0, 7).map((p) => `
+    <div class="prod">
+      <div class="prod-img">${esc(p.unidad.slice(0, 4).toUpperCase())}</div>
+      <div style="flex:1;min-width:0">
+        <div class="mini negro" style="font-weight:600">${esc(p.nombre)}</div>
+        <div class="micro">${esc(p.categoriaNombre)} &middot; ${esc(p.marca)}
+          &middot; ${p.stock > 0 ? `<span style="color:var(--verde)">${numero(p.stock)} ${esc(p.unidad)}</span>` : '<span style="color:var(--rojo)">agotado</span>'}</div>
+      </div>
+      <div class="mono acento">${COP(p.precio)}</div>
+    </div>`).join('') || '<p class="nada">Sin resultados</p>';
+}
+pintar(cat.productos);
+
+let t;
+$('#busca').addEventListener('input', (e) => {
+  clearTimeout(t);
+  const q = e.target.value.trim();
+  t = setTimeout(async () => {
+    const r = q ? await api.get('/api/catalogo?q=' + encodeURIComponent(q)) : cat;
+    pintar(r.productos);
+  }, 180);
+});
+</script>
+</body>
+</html>

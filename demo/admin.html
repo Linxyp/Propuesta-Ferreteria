@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sistema interno — Ferreteria 360</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+<link rel="stylesheet" href="assets/base.css">
+<style>
+  .dia { border: 1px solid var(--linea); border-radius: var(--radio); background: var(--panel); overflow: hidden; }
+  .dia-top { padding: 10px 13px; background: var(--tinta-3); border-bottom: 1px solid var(--linea); }
+  .dia-cuerpo { padding: 9px; display: grid; gap: 7px; max-height: 430px; overflow-y: auto; }
+  .ped {
+    padding: 9px 10px; border-radius: 9px; background: var(--tinta); border: 1px solid var(--linea);
+    font-size: .8rem; cursor: pointer; transition: .13s;
+  }
+  .ped:hover { border-color: var(--acento); }
+  .ped-top { display: flex; justify-content: space-between; gap: 6px; margin-bottom: 3px; }
+  .rejilla-dias { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 11px; }
+  @media (max-width: 1100px) { .grid[style*='330px'] { grid-template-columns: 1fr !important; } }
+  .ficha { position: fixed; inset: 0; background: rgba(4,8,16,.72); display: none; place-items: center; z-index: 200; padding: 20px; }
+  .ficha.abierta { display: grid; }
+  .ficha-caja { background: var(--panel-2); border: 1px solid var(--linea); border-radius: var(--radio); padding: 22px; width: min(640px, 96vw); max-height: 88vh; overflow-y: auto; }
+  .semaforo { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+</style>
+</head>
+<body>
+<div id="barra"></div>
+
+<main class="contenedor seccion-s">
+  <div class="fila-sb wrap" style="margin-bottom:6px">
+    <div>
+      <span class="etiqueta">Modulo 04 &middot; uso interno</span>
+      <h1 style="margin:10px 0 0">Sistema interno de la ferreteria</h1>
+      <p class="mini" style="margin:4px 0 0">Inventario, pedidos de los proximos dias, caja y finanzas. Todo alimentado por los mismos canales.</p>
+    </div>
+    <div class="fila">
+      <span class="micro" id="reloj"></span>
+      <button class="boton fantasma s" id="refrescar">Actualizar</button>
+    </div>
+  </div>
+
+  <div class="tabs" style="margin-top:18px">
+    <button class="tab activo" data-t="tablero">Tablero</button>
+    <button class="tab" data-t="pedidos">Pedidos y despachos</button>
+    <button class="tab" data-t="inventario">Inventario</button>
+    <button class="tab" data-t="finanzas">Finanzas</button>
+    <button class="tab" data-t="clientes">Clientes</button>
+    <button class="tab" data-t="chats">Conversaciones</button>
+  </div>
+  <div id="vista"><div class="tarjeta cargando">Cargando...</div></div>
+</main>
+
+<div class="ficha" id="ficha"><div class="ficha-caja" id="ficha-caja"></div></div>
+<div id="pie"></div>
+
+<script type="module">
+import { api, barra, pie, COP, COPcorto, numero, pct, esc, $, $$, aviso,
+         grafLinea, grafBarras, grafDona, ESTADO_COLOR, CANAL_ICONO } from './assets/app.js';
+
+$('#barra').innerHTML = barra('/admin');
+$('#pie').innerHTML = pie();
+$('#reloj').textContent = new Date().toLocaleString('es-CO', { dateStyle: 'full', timeStyle: 'short' });
+
+let tabActual = 'tablero';
+$$('.tab').forEach((t) => t.addEventListener('click', () => {
+  $$('.tab').forEach((x) => x.classList.remove('activo'));
+  t.classList.add('activo');
+  tabActual = t.dataset.t;
+  render();
+}));
+$('#refrescar').addEventListener('click', render);
+$('#ficha').addEventListener('click', (e) => { if (e.target.id === 'ficha') cerrarFicha(); });
+const cerrarFicha = () => $('#ficha').classList.remove('abierta');
+
+const cargando = () => { $('#vista').innerHTML = '<div class="tarjeta cargando">Cargando...</div>'; };
+const delta = (v) => v == null ? '' :
+  `<span class="${v >= 0 ? 'sube' : 'baja'}">${v >= 0 ? '▲' : '▼'} ${pct(Math.abs(v), 1)}</span>`;
+
+async function render() {
+  cargando();
+  try {
+    if (tabActual === 'tablero') await tablero();
+    else if (tabActual === 'pedidos') await pedidos();
+    else if (tabActual === 'inventario') await inventario();
+    else if (tabActual === 'finanzas') await finanzas();
+    else if (tabActual === 'clientes') await clientes();
+    else await chats();
+  } catch (e) {
+    $('#vista').innerHTML = `<div class="aviso roja">No se pudo cargar: ${esc(e.message)}</div>`;
+  }
+}
+
+// ------------------------------------------------------------- TABLERO ---
+async function tablero() {
+  const d = await api.get('/api/admin/dashboard');
+  const k = d.kpis;
+  const canalColor = { mostrador: '#f5a524', whatsapp: '#2fbf71', portal: '#22b8cf', web: '#8b6dd6', simulador: '#6b7f9e' };
+
+  $('#vista').innerHTML = `
+    <div class="grid g4">
+      <div class="kpi"><div class="kpi-label">Ventas de hoy</div><div class="kpi-valor">${COP(k.ventasHoy)}</div>
+        <div class="kpi-pie">${k.transaccionesHoy} transacciones ${delta(k.variacionVsAyer)} vs ayer</div></div>
+      <div class="kpi"><div class="kpi-label">Ventas 30 dias</div><div class="kpi-valor">${COPcorto(k.ventasMes)}</div>
+        <div class="kpi-pie">${delta(k.variacionVsMesAnterior)} vs periodo anterior</div></div>
+      <div class="kpi"><div class="kpi-label">Utilidad operacional 30d</div><div class="kpi-valor">${COPcorto(k.utilidadMes)}</div>
+        <div class="kpi-pie">Margen bruto ${pct(k.margenMes)}</div></div>
+      <div class="kpi"><div class="kpi-label">Inventario valorizado</div><div class="kpi-valor">${COPcorto(k.inventarioValorizado)}</div>
+        <div class="kpi-pie">${k.productosBajoMinimo} referencias bajo minimo</div></div>
+    </div>
+
+    <div class="grid g-lateral" style="margin-top:16px">
+      <div class="tarjeta">
+        <div class="fila-sb"><h3 style="margin:0">Ventas de los ultimos 30 dias</h3>
+          <span class="etiqueta gris">ticket promedio ${COP(k.ticketPromedio)}</span></div>
+        ${grafLinea(d.serie, { clave: 'ventas', alto: 200 })}
+        <hr class="separador">
+        <div class="grid g2">
+          <div><h3 style="font-size:.92rem">Por canal (30 dias)</h3>
+            ${grafDona(d.canales.map((c) => ({ nombre: CANAL_ICONO[c.canal] || c.canal, valor: c.ventas, color: canalColor[c.canal] || '#6b7f9e' })), { tamano: 128 })}</div>
+          <div><h3 style="font-size:.92rem">Mas vendidos</h3>
+            ${grafBarras(d.top.slice(0, 6), { clave: 'ventas', etiqueta: 'nombre' })}</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="tarjeta">
+          <div class="fila-sb"><h3 style="margin:0">Cierre de hoy</h3><span class="etiqueta verde">cuadrado</span></div>
+          <div style="margin-top:12px">
+            <div class="fila-sb" style="padding:5px 0"><span class="mini">Efectivo y datafono</span><span class="mono negro">${COP(d.cierreHoy.caja.esperadoEnCaja)}</span></div>
+            <div class="fila-sb" style="padding:5px 0"><span class="mini">A credito (cartera)</span><span class="mono">${COP(d.cierreHoy.caja.aCartera)}</span></div>
+            <div class="fila-sb" style="padding:5px 0"><span class="mini">Descuentos otorgados</span><span class="mono" style="color:var(--verde)">-${COP(d.cierreHoy.descuentosOtorgados)}</span></div>
+            <hr class="separador" style="margin:9px 0">
+            <div class="fila-sb"><span class="mini">Base gravable</span><span class="mono">${COP(d.cierreHoy.baseGravable)}</span></div>
+            <div class="fila-sb"><span class="mini">IVA generado</span><span class="mono">${COP(d.cierreHoy.iva)}</span></div>
+            <div class="fila-sb" style="margin-top:8px"><span style="font-weight:700">Utilidad bruta</span>
+              <span class="acento mono" style="font-size:1.05rem">${COP(d.cierreHoy.utilidadBruta)}</span></div>
+          </div>
+        </div>
+
+        <div class="tarjeta" style="margin-top:14px">
+          <div class="fila-sb"><h3 style="margin:0">Alertas de bodega</h3>
+            <span class="etiqueta ${d.alertas.total ? 'roja' : 'verde'}">${d.alertas.total}</span></div>
+          <div style="margin-top:10px">
+            ${[...d.alertas.agotados.map((a) => [a, 'var(--rojo)', 'agotado']),
+               ...d.alertas.criticos.map((a) => [a, 'var(--acento)', 'critico']),
+               ...d.alertas.bajos.map((a) => [a, 'var(--cian)', 'bajo minimo'])]
+              .slice(0, 7)
+              .map(([a, color, txt]) => `<div class="fila-sb" style="padding:6px 0;border-bottom:1px solid rgba(35,49,77,.5)">
+                <div><span class="semaforo" style="background:${color}"></span><span class="mini negro">${esc(a.nombre)}</span>
+                  <div class="micro" style="margin-left:14px">${txt} · quedan ${numero(a.stock)} ${esc(a.unidad)} · clase ${a.abc}</div></div>
+                <span class="mono micro">pedir ${numero(a.sugerido)}</span></div>`).join('')
+              || '<p class="nada">Todo en niveles normales.</p>'}
+          </div>
+        </div>
+
+        <div class="tarjeta" style="margin-top:14px">
+          <h3>Actividad reciente</h3>
+          <div style="margin-top:8px;max-height:210px;overflow-y:auto">
+            ${d.eventos.map((e) => `<div style="padding:6px 0;border-bottom:1px solid rgba(35,49,77,.5)">
+              <div class="mini">${esc(e.detalle)}</div>
+              <div class="micro">${new Date(e.ts).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })} · ${esc(e.tipo)}</div></div>`).join('')
+              || '<p class="nada">Sin actividad</p>'}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tarjeta" style="margin-top:16px">
+      <div class="fila-sb"><h3 style="margin:0">Pedidos programados</h3>
+        <span class="mini">${d.agenda.totalActivos} activos${d.agenda.atrasados.length ? ` · <span style="color:var(--rojo)">${d.agenda.atrasados.length} atrasados</span>` : ''}</span></div>
+      <div class="grid g4" style="margin-top:12px">
+        ${d.agenda.grupos.slice(0, 4).map((g) => `<div class="tarjeta-plana">
+          <div class="kpi-label">${esc(g.etiqueta)}</div>
+          <div style="font-size:1.35rem;font-weight:800;margin-top:3px">${g.cantidad} <span class="micro">pedidos</span></div>
+          <div class="kpi-pie">${COP(g.total)} · ${g.domicilios} domicilios</div></div>`).join('')}
+      </div>
+    </div>`;
+}
+
+// ------------------------------------------------------------- PEDIDOS ---
+async function pedidos() {
+  const [a, alist] = await Promise.all([
+    api.get('/api/admin/agenda?dias=7'),
+    api.get('/api/admin/alistamiento'),
+  ]);
+
+  $('#vista').innerHTML = `
+    ${a.atrasados.length ? `<div class="aviso roja" style="margin-bottom:14px">
+      <b>${a.atrasados.length} pedido(s) con fecha vencida:</b>
+      ${a.atrasados.slice(0, 5).map((p) => `${esc(p.id)} (${esc(p.clienteNombre)}, ${esc(p.fechaEntrega)})`).join(' · ')}</div>` : ''}
+
+    <div class="grid" style="grid-template-columns:1fr 330px;align-items:start;gap:16px">
+      <div>
+        <h3>Agenda de despacho — proximos 7 dias</h3>
+        <p class="mini" style="margin:4px 0 12px">Pulse un pedido para ver el detalle y cambiar su estado.</p>
+        <div class="rejilla-dias">
+          ${a.grupos.map((g) => `
+            <div class="dia">
+              <div class="dia-top">
+                <div class="fila-sb"><b style="font-size:.86rem">${esc(g.etiqueta)}</b><span class="etiqueta gris">${g.cantidad}</span></div>
+                <div class="micro">${COP(g.total)} · ${numero(g.unidades)} unidades</div>
+              </div>
+              <div class="dia-cuerpo">
+                ${g.pedidos.map((p) => `
+                  <div class="ped" data-id="${esc(p.id)}">
+                    <div class="ped-top"><span class="mono" style="color:var(--acento)">${esc(p.id)}</span>
+                      <span class="etiqueta ${ESTADO_COLOR[p.estado] || 'gris'}" style="font-size:.6rem;padding:2px 7px">${esc(p.estado)}</span></div>
+                    <div class="negro" style="font-size:.78rem">${esc(p.clienteNombre)}</div>
+                    <div class="micro">${esc(CANAL_ICONO[p.canal] || p.canal)} · ${p.items.length} lineas · ${esc(p.entrega)}</div>
+                    <div class="mono micro" style="margin-top:3px">${COP(p.total)}</div>
+                  </div>`).join('') || '<p class="nada" style="font-size:.78rem;padding:8px">Sin pedidos</p>'}
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="tarjeta">
+        <h3>Lista de alistamiento — ${esc(alist.etiqueta)}</h3>
+        <p class="mini" style="margin:4px 0 12px">${alist.pedidos} pedidos consolidados por producto.
+          Bodega alista una sola vez, no pedido por pedido.</p>
+        <table>
+          <thead><tr><th>Producto</th><th class="der">Total</th><th>Pedidos</th></tr></thead>
+          <tbody>${alist.lineas.map((l) => `<tr>
+            <td class="mini negro">${esc(l.nombre)}</td>
+            <td class="num negro">${numero(l.cantidad, 2)} <span class="micro">${esc(l.unidad)}</span></td>
+            <td class="micro">${l.pedidos.length}</td></tr>`).join('')
+            || '<tr><td colspan="3" class="nada">Nada por alistar hoy</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+  $$('.ped').forEach((el) => el.addEventListener('click', () => abrirPedido(el.dataset.id)));
+}
+
+async function abrirPedido(id) {
+  const { pedido: p, seguimiento: s } = await api.get('/api/admin/pedidos/' + id);
+  const flujo = { recibido: ['alistando', 'cancelado'], alistando: ['listo', 'cancelado'], listo: ['despachado', 'cancelado'], despachado: ['entregado'], entregado: [], cancelado: [] };
+
+  $('#ficha-caja').innerHTML = `
+    <div class="fila-sb">
+      <div><span class="etiqueta ${ESTADO_COLOR[p.estado] || 'gris'}">${esc(p.estado)}</span>
+        <h2 style="margin:8px 0 0">${esc(p.id)}</h2>
+        <p class="mini" style="margin:2px 0 0">${esc(p.clienteNombre)} · ${esc(CANAL_ICONO[p.canal] || p.canal)} · creado por ${esc(p.creadoPor)}</p></div>
+      <button class="boton fantasma s" id="cerrar">Cerrar</button>
+    </div>
+
+    <div class="grid g3" style="margin:16px 0">
+      <div class="tarjeta-plana"><div class="kpi-label">Entrega</div><div class="mini negro">${esc(s.etiqueta)}</div><div class="micro">${esc(p.entrega)}</div></div>
+      <div class="tarjeta-plana"><div class="kpi-label">Pago</div><div class="mini negro">${esc(p.pago)}</div><div class="micro">${esc(p.nivel || 'mostrador')}</div></div>
+      <div class="tarjeta-plana"><div class="kpi-label">Total</div><div class="mini negro">${COP(p.total)}</div><div class="micro">IVA ${COP(p.iva)}</div></div>
+    </div>
+
+    ${p.obra ? `<p class="mini"><b>Obra:</b> ${esc(p.obra)}</p>` : ''}
+    ${p.direccion ? `<p class="mini"><b>Direccion:</b> ${esc(p.direccion)}</p>` : ''}
+    ${p.notas ? `<div class="aviso" style="margin:10px 0">${esc(p.notas)}</div>` : ''}
+
+    <table style="margin-top:10px">
+      <thead><tr><th>Producto</th><th class="der">Cant.</th><th class="der">Unitario</th><th class="der">Subtotal</th></tr></thead>
+      <tbody>${p.items.map((i) => `<tr><td class="mini">${esc(i.nombre)}</td>
+        <td class="num">${numero(i.cantidad, 2)} ${esc(i.unidad)}</td>
+        <td class="num">${COP(i.precioUnit)}</td><td class="num negro">${COP(i.subtotal)}</td></tr>`).join('')}</tbody>
+    </table>
+
+    <hr class="separador">
+    <div class="fila wrap">
+      ${flujo[p.estado].map((e) => `<button class="boton ${e === 'cancelado' ? 'fantasma' : ''} s" data-estado="${e}">Marcar ${esc(e)}</button>`).join('')
+        || '<span class="mini nada">Pedido cerrado, sin acciones disponibles.</span>'}
+    </div>
+    <div class="micro" style="margin-top:12px">Historial: ${(p.historial || []).map((h) =>
+      `${esc(h.estado)} (${new Date(h.ts).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })})`).join(' → ')}</div>`;
+
+  $('#ficha').classList.add('abierta');
+  $('#cerrar').onclick = cerrarFicha;
+  $('#ficha-caja').querySelectorAll('[data-estado]').forEach((b) => b.onclick = async () => {
+    try {
+      await api.post(`/api/admin/pedidos/${id}/estado`, { estado: b.dataset.estado });
+      aviso(`${id} marcado como ${b.dataset.estado}.`, 'ok');
+      cerrarFicha();
+      render();
+    } catch (e) { aviso(e.message, 'error'); }
+  });
+}
+
+// ---------------------------------------------------------- INVENTARIO ---
+async function inventario() {
+  const [inv, al] = await Promise.all([
+    api.get('/api/admin/inventario?dias=30'),
+    api.get('/api/admin/inventario/alertas'),
+  ]);
+  const v = inv.valorizacion;
+
+  $('#vista').innerHTML = `
+    <div class="grid g4">
+      <div class="kpi"><div class="kpi-label">Costo del inventario</div><div class="kpi-valor">${COPcorto(v.costoTotal)}</div><div class="kpi-pie">${v.referencias} referencias</div></div>
+      <div class="kpi"><div class="kpi-label">Venta potencial</div><div class="kpi-valor">${COPcorto(v.ventaPotencial)}</div><div class="kpi-pie">si se vende todo el stock</div></div>
+      <div class="kpi"><div class="kpi-label">Utilidad potencial</div><div class="kpi-valor" style="color:var(--verde)">${COPcorto(v.utilidadPotencial)}</div><div class="kpi-pie">margen ${pct(v.utilidadPotencial / v.ventaPotencial)}</div></div>
+      <div class="kpi"><div class="kpi-label">Capital quieto</div><div class="kpi-valor" style="color:var(--rojo)">${COPcorto(al.compras.capitalQuieto)}</div><div class="kpi-pie">sin rotacion en 30 dias</div></div>
+    </div>
+
+    <div class="grid g-lateral" style="margin-top:16px">
+      <div class="tarjeta">
+        <div class="fila-sb wrap">
+          <h3 style="margin:0">Existencias y rotacion</h3>
+          <input id="q" placeholder="Filtrar producto..." style="width:230px">
+        </div>
+        <div style="max-height:560px;overflow-y:auto;margin-top:12px">
+          <table>
+            <thead><tr><th>Producto</th><th class="der">Stock</th><th class="der">Consumo 30d</th><th class="der">Cobertura</th><th>ABC</th><th class="der">Valor</th></tr></thead>
+            <tbody id="tabla-inv"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <div class="tarjeta">
+          <div class="fila-sb"><h3 style="margin:0">Que hay que comprar</h3>
+            <span class="etiqueta">${COPcorto(al.compras.inversionSugerida)}</span></div>
+          <p class="micro" style="margin:5px 0 10px">Calculado por consumo real de 30 dias y dias de cobertura, no por corazonada.</p>
+          <div style="max-height:330px;overflow-y:auto">
+            ${al.compras.reponer.map((r) => `<div class="fila-sb" style="padding:7px 0;border-bottom:1px solid rgba(35,49,77,.5)">
+              <div style="min-width:0"><div class="mini negro">${esc(r.nombre)}</div>
+                <div class="micro">quedan ${numero(r.stock)} ${esc(r.unidad)}
+                  ${r.diasCobertura !== null ? `· cobertura ${numero(r.diasCobertura, 1)} dias` : '· sin movimiento'}</div></div>
+              <div class="der"><div class="mono acento">${numero(r.sugerido)}</div>
+                <div class="micro">${COPcorto(r.inversion)}</div></div></div>`).join('')
+              || '<p class="nada">Nada por reponer.</p>'}
+          </div>
+        </div>
+
+        <div class="tarjeta" style="margin-top:14px">
+          <h3>Capital inmovilizado</h3>
+          <p class="micro" style="margin:5px 0 10px">Referencias sin una sola venta en 30 dias.</p>
+          ${al.compras.quietos.slice(0, 8).map((q) => `<div class="fila-sb" style="padding:6px 0;border-bottom:1px solid rgba(35,49,77,.5)">
+            <span class="mini">${esc(q.nombre)}</span><span class="mono micro">${COPcorto(q.valorInmovilizado)}</span></div>`).join('')
+            || '<p class="nada">Todo rota.</p>'}
+        </div>
+
+        <div class="tarjeta" style="margin-top:14px">
+          <h3>Valor por categoria</h3>
+          <div style="margin-top:10px">${grafBarras(v.porCategoria.slice(0, 8), { clave: 'costo', etiqueta: 'nombre', color: '#f5a524' })}</div>
+        </div>
+      </div>
+    </div>`;
+
+  const pintarTabla = (filtro = '') => {
+    const f = filtro.toLowerCase();
+    $('#tabla-inv').innerHTML = inv.productos
+      .filter((p) => !f || p.nombre.toLowerCase().includes(f) || p.sku.toLowerCase().includes(f))
+      .slice(0, 90)
+      .map((p) => {
+        const bajo = p.stock <= p.stockMin;
+        return `<tr>
+          <td><div class="mini negro">${esc(p.nombre)}</div><div class="micro mono">${esc(p.sku)} · ${esc(p.categoria)}</div></td>
+          <td class="num" style="${bajo ? 'color:var(--rojo);font-weight:700' : ''}">${numero(p.stock, 2)} <span class="micro">${esc(p.unidad)}</span></td>
+          <td class="num">${numero(p.consumoPeriodo, 1)}</td>
+          <td class="num">${p.diasCobertura === null ? '<span class="micro">—</span>' : numero(p.diasCobertura, 1) + ' d'}</td>
+          <td><span class="etiqueta ${p.abc === 'A' ? '' : p.abc === 'B' ? 'cian' : 'gris'}" style="padding:2px 8px;font-size:.62rem">${p.abc}</span></td>
+          <td class="num">${COPcorto(p.valorInventario)}</td></tr>`;
+      }).join('');
+  };
+  pintarTabla();
+  $('#q').addEventListener('input', (e) => pintarTabla(e.target.value));
+}
+
+// ------------------------------------------------------------ FINANZAS ---
+async function finanzas() {
+  const f = await api.get('/api/admin/finanzas?dias=30');
+  const r = f.resultados, ant = f.anterior;
+  const varia = (a, b) => (b ? (a - b) / b : 0);
+
+  $('#vista').innerHTML = `
+    <div class="grid g-lateral">
+      <div>
+        <div class="tarjeta">
+          <h3>Estado de resultados — ultimos ${r.periodo.dias} dias</h3>
+          <table style="margin-top:12px">
+            <thead><tr><th>Concepto</th><th class="der">Periodo actual</th><th class="der">Periodo anterior</th><th class="der">Variacion</th></tr></thead>
+            <tbody>
+              ${[
+                ['Ingresos (con IVA)', r.ingresosBrutos, ant.ingresosBrutos, false],
+                ['Ingresos netos (sin IVA)', r.ingresosNetos, ant.ingresosNetos, false],
+                ['Costo de ventas', -r.costoVentas, -ant.costoVentas, false],
+                ['Utilidad bruta', r.utilidadBruta, ant.utilidadBruta, true],
+                ['Gastos operativos', -r.gastos, -ant.gastos, false],
+                ['Utilidad operacional', r.utilidadOperacional, ant.utilidadOperacional, true],
+              ].map(([n, a, b, fuerte]) => `<tr>
+                <td class="${fuerte ? 'negro' : 'mini'}" style="${fuerte ? 'font-weight:700' : ''}">${n}</td>
+                <td class="num ${fuerte ? 'negro' : ''}">${COP(a)}</td>
+                <td class="num micro">${COP(b)}</td>
+                <td class="num">${delta(varia(a, b))}</td></tr>`).join('')}
+            </tbody>
+          </table>
+          <div class="grid g3" style="margin-top:14px">
+            <div class="tarjeta-plana"><div class="kpi-label">Margen bruto</div><div class="kpi-valor" style="font-size:1.3rem">${pct(r.margenBrutoPct)}</div></div>
+            <div class="tarjeta-plana"><div class="kpi-label">Margen operacional</div><div class="kpi-valor" style="font-size:1.3rem">${pct(r.margenOperacionalPct)}</div></div>
+            <div class="tarjeta-plana"><div class="kpi-label">Ticket promedio</div><div class="kpi-valor" style="font-size:1.3rem">${COP(r.ticketPromedio)}</div></div>
+          </div>
+        </div>
+
+        <div class="tarjeta" style="margin-top:16px">
+          <div class="fila-sb"><h3 style="margin:0">Proyeccion de caja a 30 dias</h3>
+            <span class="etiqueta gris">punto de equilibrio ${COP(f.flujo.puntoEquilibrioDiario)}/dia</span></div>
+          ${grafLinea(f.flujo.proyeccion, { clave: 'acumulado', alto: 180, color: '#22b8cf' })}
+          <p class="micro" style="margin:0 0 8px">Proyeccion de caja, no de utilidad: entra la venta de contado mas el recaudo de
+            cartera, sale la reposicion de mercancia mas el gasto fijo. La venta a credito del dia no cuenta como caja.</p>
+          <div class="grid g3" style="margin-top:10px">
+            <div><div class="kpi-label">Venta promedio/dia</div><div class="mono negro">${COP(f.flujo.promedioDiario)}</div></div>
+            <div><div class="kpi-label">Gasto fijo/dia</div><div class="mono negro">${COP(f.flujo.gastoDiario)}</div></div>
+            <div><div class="kpi-label">Caja acumulada a 30d</div>
+              <div class="mono" style="color:${f.flujo.proyeccion.at(-1).acumulado >= 0 ? 'var(--verde)' : 'var(--rojo)'}">${COP(f.flujo.proyeccion.at(-1).acumulado)}</div></div>
+          </div>
+        </div>
+
+        <div class="tarjeta" style="margin-top:16px">
+          <h3>Margen por categoria</h3>
+          <table style="margin-top:10px">
+            <thead><tr><th>Categoria</th><th class="der">Ventas</th><th class="der">Costo</th><th class="der">Margen</th><th class="der">%</th></tr></thead>
+            <tbody>${f.categorias.map((c) => `<tr>
+              <td class="mini negro">${esc(c.nombre)}</td>
+              <td class="num">${COPcorto(c.ventas)}</td>
+              <td class="num micro">${COPcorto(c.costo)}</td>
+              <td class="num negro">${COPcorto(c.margen)}</td>
+              <td class="num" style="color:${c.margenPct > .22 ? 'var(--verde)' : c.margenPct > .15 ? 'var(--acento)' : 'var(--rojo)'}">${pct(c.margenPct)}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <div class="tarjeta">
+          <div class="fila-sb"><h3 style="margin:0">Cartera</h3>
+            <span class="etiqueta ${f.cartera.vencida > 0 ? 'roja' : 'verde'}">${COPcorto(f.cartera.total)}</span></div>
+          <div class="grid g2" style="margin-top:12px">
+            <div class="tarjeta-plana"><div class="kpi-label">Al dia</div><div class="mono" style="color:var(--verde);font-size:1.05rem">${COPcorto(f.cartera.alDia)}</div></div>
+            <div class="tarjeta-plana"><div class="kpi-label">Vencida</div><div class="mono" style="color:var(--rojo);font-size:1.05rem">${COPcorto(f.cartera.vencida)}</div></div>
+          </div>
+          <div style="margin-top:12px">${grafBarras(
+            Object.entries(f.cartera.edades).map(([k, v]) => ({ nombre: k + ' dias', valor: v })),
+            { clave: 'valor', color: '#8b6dd6' })}</div>
+          <hr class="separador">
+          <div style="max-height:300px;overflow-y:auto">
+            ${f.cartera.clientes.filter((c) => c.saldo > 0).map((c) => `
+              <div style="padding:8px 0;border-bottom:1px solid rgba(35,49,77,.5)">
+                <div class="fila-sb"><span class="mini negro">${esc(c.nombre)}</span>
+                  <span class="mono ${c.vencido ? 'baja' : ''}">${COPcorto(c.saldo)}</span></div>
+                <div class="barra-prog" style="margin-top:5px"><i style="width:${Math.min(100, c.usoPct * 100)}%;background:${c.usoPct > .8 ? 'var(--rojo)' : 'var(--acento)'}"></i></div>
+                <div class="micro">${pct(c.usoPct, 0)} del cupo · ${c.edadMaxima} dias · plazo ${c.plazoDias}
+                  ${c.vencido ? '<span style="color:var(--rojo)"> · VENCIDA</span>' : ''}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <div class="tarjeta" style="margin-top:16px">
+          <h3>Productos que mas aportan</h3>
+          <table style="margin-top:10px">
+            <thead><tr><th>Producto</th><th class="der">Ventas</th><th class="der">Margen</th></tr></thead>
+            <tbody>${f.top.map((t) => `<tr><td class="mini">${esc(t.nombre)}</td>
+              <td class="num">${COPcorto(t.ventas)}</td>
+              <td class="num" style="color:var(--verde)">${pct(t.margenPct)}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ------------------------------------------------------------ CLIENTES ---
+async function clientes() {
+  const { clientes: lista } = await api.get('/api/admin/clientes');
+  $('#vista').innerHTML = `<div class="tarjeta">
+    <h3>Clientes fijos</h3>
+    <p class="mini" style="margin:4px 0 12px">Estos son los que pueden pedir por WhatsApp y entrar al portal.</p>
+    <table>
+      <thead><tr><th>Cliente</th><th>Nivel</th><th class="der">Cupo</th><th class="der">Saldo</th><th class="der">Disponible</th>
+        <th class="der">Compra acumulada</th><th class="centrado">Activos</th><th>WhatsApp</th></tr></thead>
+      <tbody>${lista.map((c) => `<tr>
+        <td><div class="mini negro" style="font-weight:600">${esc(c.nombre)}</div>
+          <div class="micro">${esc(c.contacto)} · ${esc(c.nit)} · ${esc(c.frecuencia)}</div>
+          <div class="micro">${c.obras.map(esc).join(' · ')}</div></td>
+        <td><span class="etiqueta ${{ aliado: '', mayorista: 'morada', constructor: 'cian' }[c.nivel] || 'gris'}">${esc(c.nivelNombre)}</span></td>
+        <td class="num">${COPcorto(c.cupoCredito)}</td>
+        <td class="num">${COPcorto(c.saldoCartera)}</td>
+        <td class="num ${c.disponible < c.cupoCredito * .2 ? 'baja' : 'sube'}">${COPcorto(c.disponible)}</td>
+        <td class="num negro">${COPcorto(c.compraAcumulada)}</td>
+        <td class="centrado">${c.activos ? `<span class="etiqueta">${c.activos}</span>` : '<span class="micro">—</span>'}</td>
+        <td class="micro mono">${esc(c.whatsapp)}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+}
+
+// ------------------------------------------------------- CONVERSACIONES ---
+async function chats() {
+  const { conversaciones } = await api.get('/api/admin/conversaciones');
+  $('#vista').innerHTML = `<div class="tarjeta">
+    <div class="fila-sb"><h3 style="margin:0">Conversaciones del bot</h3>
+      <span class="etiqueta cian">${conversaciones.length} activas</span></div>
+    <p class="mini" style="margin:4px 0 12px">El asesor puede entrar a cualquiera y continuarla sin que el cliente repita nada.</p>
+    <table>
+      <thead><tr><th>Numero</th><th>Cliente</th><th class="centrado">Mensajes</th><th>Ultimo mensaje</th><th class="centrado">Carrito</th><th class="centrado">Estado</th></tr></thead>
+      <tbody>${conversaciones.map((c) => `<tr>
+        <td class="mono mini">${esc(c.telefono)}</td>
+        <td class="mini negro">${esc(c.cliente || 'No registrado')}</td>
+        <td class="centrado mono">${c.mensajes}</td>
+        <td class="micro">${esc(c.ultimo)}</td>
+        <td class="centrado">${c.carrito ? `<span class="etiqueta">${c.carrito} items</span>` : '<span class="micro">—</span>'}</td>
+        <td class="centrado">${c.escalada ? '<span class="etiqueta roja">escalada</span>' : '<span class="etiqueta verde">bot</span>'}</td>
+      </tr>`).join('') || '<tr><td colspan="6" class="nada">Sin conversaciones todavia</td></tr>'}</tbody>
+    </table></div>`;
+}
+
+render();
+</script>
+</body>
+</html>

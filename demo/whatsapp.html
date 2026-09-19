@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bot de WhatsApp — Ferreteria 360</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
+<link rel="stylesheet" href="assets/base.css">
+<style>
+  .telefono {
+    width: 390px; max-width: 100%; margin: 0 auto;
+    background: #0b141a; border-radius: 34px; border: 9px solid #1f2933;
+    box-shadow: 0 30px 70px -25px rgba(0,0,0,.9); overflow: hidden; position: relative;
+  }
+  .muesca { height: 22px; background: #1f2933; position: relative; }
+  .muesca::after {
+    content: ''; position: absolute; left: 50%; transform: translateX(-50%); top: 0;
+    width: 120px; height: 20px; background: #1f2933; border-radius: 0 0 14px 14px;
+  }
+  .wa-top { background: #1f2c33; padding: 9px 13px; display: flex; align-items: center; gap: 11px; }
+  .wa-avatar {
+    width: 38px; height: 38px; border-radius: 50%; flex: 0 0 auto;
+    background: linear-gradient(135deg, #f5a524, #c47f10); display: grid; place-items: center;
+    font-weight: 800; color: #1a1206; font-size: 15px;
+  }
+  .wa-nombre { color: #e9edef; font-weight: 600; font-size: .92rem; line-height: 1.25; }
+  .wa-estado { color: #8696a0; font-size: .72rem; }
+  .wa-cuerpo {
+    height: 460px; overflow-y: auto; padding: 14px 11px;
+    background-color: #0b141a;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(255,255,255,.018) 0 2px, transparent 2px),
+      radial-gradient(circle at 70% 60%, rgba(255,255,255,.018) 0 2px, transparent 2px);
+    background-size: 46px 46px;
+    display: flex; flex-direction: column; gap: 7px;
+  }
+  .wa-cifrado {
+    align-self: center; background: rgba(27,73,101,.55); color: #ffd279; font-size: .67rem;
+    padding: 6px 11px; border-radius: 7px; text-align: center; max-width: 88%; margin-bottom: 6px;
+  }
+  .wa-msg {
+    max-width: 82%; padding: 7px 10px 6px; border-radius: 9px; font-size: .83rem;
+    line-height: 1.42; color: #e9edef; white-space: pre-wrap; position: relative;
+    box-shadow: 0 1px 1px rgba(0,0,0,.25);
+  }
+  .wa-in { background: #202c33; align-self: flex-start; border-top-left-radius: 2px; }
+  .wa-out { background: #005c4b; align-self: flex-end; border-top-right-radius: 2px; }
+  .wa-msg b { color: #fff; font-weight: 700; }
+  .wa-hora { font-size: .62rem; color: #8696a0; float: right; margin: 6px 0 -2px 8px; }
+  .wa-out .wa-hora { color: #a5cfc4; }
+  .wa-bot { display: flex; gap: 8px; padding: 9px; background: #1f2c33; align-items: center; }
+  .wa-bot input {
+    background: #2a3942; border: 0; border-radius: 19px; padding: 9px 14px; color: #e9edef; font-size: .85rem;
+  }
+  .wa-bot input:focus { box-shadow: none; border: 0; }
+  .wa-enviar {
+    width: 38px; height: 38px; border-radius: 50%; background: #00a884; border: 0; cursor: pointer;
+    color: #0b141a; font-size: 17px; flex: 0 0 auto;
+  }
+  .contacto {
+    display: flex; gap: 10px; align-items: center; padding: 9px 10px; border-radius: 9px;
+    cursor: pointer; transition: .13s; border: 1px solid transparent;
+  }
+  .contacto:hover { background: var(--tinta-3); }
+  .contacto.activo { background: rgba(245,165,36,.1); border-color: rgba(245,165,36,.3); }
+  .contacto-av {
+    width: 34px; height: 34px; border-radius: 50%; flex: 0 0 auto; display: grid; place-items: center;
+    background: var(--tinta-3); font-size: .72rem; font-weight: 800; color: var(--acento);
+  }
+  .evento { padding: 9px 11px; border-left: 2px solid var(--acento); background: var(--tinta); border-radius: 0 8px 8px 0; font-size: .78rem; }
+  .evento + .evento { margin-top: 7px; }
+  .escribe { align-self: flex-start; background: #202c33; padding: 11px 14px; border-radius: 9px; display: flex; gap: 4px; }
+  .escribe i { width: 6px; height: 6px; border-radius: 50%; background: #8696a0; animation: p 1.2s infinite; }
+  .escribe i:nth-child(2){animation-delay:.18s} .escribe i:nth-child(3){animation-delay:.36s}
+  @keyframes p { 0%,60%,100%{opacity:.3} 30%{opacity:1} }
+</style>
+</head>
+<body>
+<div id="barra"></div>
+
+<main class="contenedor seccion-s">
+  <span class="etiqueta verde">Modulo 02b</span>
+  <h1 style="margin-top:10px">Bot de WhatsApp que toma pedidos</h1>
+  <p style="max-width:80ch">
+    Simulador real: lo que escriba aqui pasa por el mismo motor que atenderia a sus clientes.
+    Elija un cliente fijo a la izquierda (el bot lo reconoce por su numero, le aplica su descuento
+    y valida su cupo) y vea a la derecha como el sistema interno reacciona en el mismo instante.
+  </p>
+
+  <div class="grid" id="grid3" style="grid-template-columns:280px 1fr 330px;align-items:start;margin-top:22px;gap:18px">
+
+    <!-- ------------------------------------------------------ contactos -->
+    <div class="tarjeta">
+      <h3>Quien escribe</h3>
+      <p class="micro" style="margin:4px 0 12px">Clientes fijos registrados en el sistema.</p>
+      <div id="contactos"></div>
+      <hr class="separador">
+      <button class="boton fantasma s" id="reiniciar" style="width:100%">Reiniciar conversacion</button>
+    </div>
+
+    <!-- -------------------------------------------------------- telefono -->
+    <div>
+      <div class="telefono">
+        <div class="muesca"></div>
+        <div class="wa-top">
+          <div class="wa-avatar">F</div>
+          <div style="flex:1;min-width:0">
+            <div class="wa-nombre">Ferreteria 360</div>
+            <div class="wa-estado" id="wa-estado">en linea</div>
+          </div>
+          <div style="color:#8696a0;font-size:17px">&#8942;</div>
+        </div>
+        <div class="wa-cuerpo" id="chat">
+          <div class="wa-cifrado">Los mensajes estan cifrados de extremo a extremo.</div>
+        </div>
+        <form class="wa-bot" id="form">
+          <input id="entrada" placeholder="Mensaje" autocomplete="off">
+          <button class="wa-enviar" type="submit">&#10148;</button>
+        </form>
+      </div>
+      <div id="chips" class="wrap centrado" style="display:flex;justify-content:center;margin-top:14px"></div>
+    </div>
+
+    <!-- ----------------------------------------------- lo que pasa dentro -->
+    <div>
+      <div class="tarjeta">
+        <div class="fila-sb"><h3 style="margin:0">En el sistema interno</h3><span class="etiqueta cian">en vivo</span></div>
+        <p class="micro" style="margin:6px 0 12px">Cada mensaje mueve datos reales: no es una animacion.</p>
+        <div id="sistema"><p class="nada">Escriba un mensaje para ver la reaccion del sistema.</p></div>
+      </div>
+
+      <div class="tarjeta" style="margin-top:14px">
+        <h3>Pedidos de los proximos dias</h3>
+        <p class="micro" style="margin:4px 0 10px">Se actualiza cuando el bot cierra un pedido.</p>
+        <div id="agenda" class="cargando">...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tarjeta" style="margin-top:22px">
+    <h3>De simulador a produccion</h3>
+    <div class="grid g3" style="margin-top:12px">
+      <div><b class="mini negro">1. Numero oficial</b><p class="mini">Se registra la linea en WhatsApp Business Cloud API (Meta) a nombre de la ferreteria.</p></div>
+      <div><b class="mini negro">2. Webhook</b><p class="mini">Meta apunta a <span class="mono">/api/whatsapp/webhook</span>, ya implementado en este proyecto.</p></div>
+      <div><b class="mini negro">3. Mismo motor</b><p class="mini">El codigo que responde aqui es exactamente el que responderia en produccion. No se reescribe nada.</p></div>
+    </div>
+  </div>
+</main>
+<div id="pie"></div>
+
+<script type="module">
+import { api, barra, pie, esc, $, COP, numero, aviso } from './assets/app.js';
+
+$('#barra').innerHTML = barra('/whatsapp');
+$('#pie').innerHTML = pie();
+
+const { contactos, anonimo } = await api.get('/api/whatsapp/contactos');
+const todos = [...contactos, { id: null, nombre: anonimo.nombre, contacto: 'Cliente nuevo', whatsapp: anonimo.whatsapp, nivelNombre: 'Sin registro' }];
+let actual = todos[0];
+
+const iniciales = (n) => n.split(' ').filter((w) => w.length > 2).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+
+function pintarContactos() {
+  $('#contactos').innerHTML = todos.map((c, i) => `
+    <div class="contacto ${c.whatsapp === actual.whatsapp ? 'activo' : ''}" data-i="${i}">
+      <div class="contacto-av">${esc(iniciales(c.nombre))}</div>
+      <div style="min-width:0;flex:1">
+        <div class="mini negro" style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.nombre)}</div>
+        <div class="micro">${esc(c.nivelNombre)} &middot; ${esc(c.whatsapp)}</div>
+      </div>
+    </div>`).join('');
+  $('#contactos').querySelectorAll('.contacto').forEach((el) =>
+    el.addEventListener('click', () => {
+      actual = todos[Number(el.dataset.i)];
+      pintarContactos();
+      cargarConversacion();
+    }));
+}
+
+const hora = () => new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+const formatear = (t) => esc(t).replace(/\*([^*]+)\*/g, '<b>$1</b>').replace(/_([^_]+)_/g, '<i>$1</i>');
+
+function burbuja(texto, dir, ts) {
+  const d = document.createElement('div');
+  d.className = 'wa-msg ' + (dir === 'out' ? 'wa-out' : 'wa-in');
+  d.innerHTML = formatear(texto) + `<span class="wa-hora">${ts || hora()}</span>`;
+  $('#chat').appendChild(d);
+  $('#chat').scrollTop = $('#chat').scrollHeight;
+}
+
+async function cargarConversacion() {
+  $('#chat').innerHTML = '<div class="wa-cifrado">Los mensajes estan cifrados de extremo a extremo.</div>';
+  const { conversacion } = await api.get('/api/whatsapp/conversacion/' + encodeURIComponent(actual.whatsapp));
+  if (!conversacion.mensajes.length) {
+    pintarChips(actual.id
+      ? ['Buenas', 'Lo de siempre', 'Necesito 20 bultos de cemento y 3 m3 de arena', 'Mi saldo']
+      : ['Buenas', 'Cuanto vale el cemento', 'Cuanto material para una placa de 5x4', 'Hacen domicilios']);
+    return;
+  }
+  for (const m of conversacion.mensajes) {
+    burbuja(m.texto, m.de === 'cliente' ? 'out' : 'in',
+      new Date(m.ts).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }));
+  }
+}
+
+function pintarChips(lista) {
+  $('#chips').innerHTML = (lista || []).map((c) => `<span class="chip">${esc(c)}</span>`).join('');
+  $('#chips').querySelectorAll('.chip').forEach((c) => c.addEventListener('click', () => enviar(c.textContent)));
+}
+
+function pintarSistema(r) {
+  const c = r.conversacion;
+  const bloques = [
+    `<div class="evento"><b>Mensaje interpretado</b><br>
+      intencion <span class="mono acento">${esc(r.interpretacion.intencion)}</span> ·
+      confianza ${Math.round(r.interpretacion.confianza * 100)}% ·
+      ${r.interpretacion.items} producto(s) identificado(s)</div>`,
+  ];
+  if (c.cliente) {
+    bloques.push(`<div class="evento"><b>Cliente reconocido por su numero</b><br>
+      ${esc(c.cliente.nombre)} — precio <span class="acento">${esc(c.cliente.nivel)}</span></div>`);
+  } else {
+    bloques.push(`<div class="evento" style="border-color:var(--texto-3)"><b>Numero no registrado</b><br>
+      Atiende como cliente nuevo, con precio de lista.</div>`);
+  }
+  if (c.carrito?.length) {
+    bloques.push(`<div class="evento"><b>Pedido en construccion</b><br>
+      ${c.carrito.map((x) => `${numero(x.cantidad, 2)} x <span class="mono">${esc(x.sku)}</span>`).join('<br>')}</div>`);
+  }
+  if (c.esperando) {
+    bloques.push(`<div class="evento" style="border-color:var(--cian)"><b>Estado de la conversacion</b><br>
+      esperando <span class="mono">${esc(c.esperando)}</span></div>`);
+  }
+  const creado = r.respuestas.find((m) => m.evento === 'pedido_creado');
+  if (creado) {
+    bloques.unshift(`<div class="evento" style="border-color:var(--verde)"><b>Pedido creado: ${esc(creado.pedidoId)}</b><br>
+      Inventario descontado y pedido cargado en la agenda de despacho.</div>`);
+    aviso(`Pedido ${creado.pedidoId} creado desde WhatsApp`, 'ok');
+    cargarAgenda();
+  }
+  if (c.escalada) {
+    bloques.push(`<div class="evento" style="border-color:var(--rojo)"><b>Escalado a un asesor humano</b><br>
+      Queda registrado en el log de eventos del sistema.</div>`);
+  }
+  $('#sistema').innerHTML = bloques.join('');
+}
+
+async function cargarAgenda() {
+  const a = await api.get('/api/admin/agenda?dias=5');
+  $('#agenda').classList.remove('cargando');
+  $('#agenda').innerHTML = a.grupos.map((g) => `
+    <div class="fila-sb" style="padding:7px 0;border-bottom:1px solid rgba(35,49,77,.6)">
+      <div><div class="mini negro">${esc(g.etiqueta)}</div><div class="micro">${g.cantidad} pedido(s) · ${g.domicilios} a domicilio</div></div>
+      <div class="mono acento">${COP(g.total)}</div>
+    </div>`).join('');
+}
+
+let ocupado = false;
+async function enviar(texto) {
+  if (ocupado || !texto?.trim()) return;
+  ocupado = true;
+  burbuja(texto, 'out');
+  $('#entrada').value = '';
+  pintarChips([]);
+  $('#wa-estado').textContent = 'escribiendo...';
+
+  const esp = document.createElement('div');
+  esp.className = 'escribe';
+  esp.innerHTML = '<i></i><i></i><i></i>';
+  $('#chat').appendChild(esp);
+  $('#chat').scrollTop = $('#chat').scrollHeight;
+
+  try {
+    const r = await api.post('/api/whatsapp/mensaje', { telefono: actual.whatsapp, texto });
+    await new Promise((res) => setTimeout(res, 420));
+    esp.remove();
+    for (const m of r.respuestas) {
+      burbuja(m.texto, 'in');
+      await new Promise((res) => setTimeout(res, 240));
+    }
+    pintarChips(r.respuestas.at(-1)?.chips);
+    pintarSistema(r);
+  } catch (e) {
+    esp.remove();
+    aviso(e.message, 'error');
+  } finally {
+    ocupado = false;
+    $('#wa-estado').textContent = 'en linea';
+    $('#entrada').focus();
+  }
+}
+
+$('#form').addEventListener('submit', (e) => { e.preventDefault(); enviar($('#entrada').value); });
+$('#reiniciar').addEventListener('click', async () => {
+  await api.post('/api/whatsapp/reiniciar/' + encodeURIComponent(actual.whatsapp));
+  $('#sistema').innerHTML = '<p class="nada">Conversacion reiniciada.</p>';
+  cargarConversacion();
+});
+
+pintarContactos();
+await cargarConversacion();
+await cargarAgenda();
+</script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asistente IA de la ferreteria — Ferreteria 360</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+<link rel="stylesheet" href="assets/base.css">
+<style>
+  .chat { display: flex; flex-direction: column; height: 68vh; min-height: 480px; }
+  .hilo { flex: 1; overflow-y: auto; padding: 4px 4px 12px; display: flex; flex-direction: column; gap: 12px; }
+  .burbuja { max-width: 78%; padding: 12px 15px; border-radius: 15px; font-size: .9rem; line-height: 1.55; white-space: pre-wrap; }
+  .de-bot { background: var(--panel-2); border: 1px solid var(--linea); border-bottom-left-radius: 5px; align-self: flex-start; }
+  .de-yo { background: var(--acento); color: #1a1206; border-bottom-right-radius: 5px; align-self: flex-end; font-weight: 500; }
+  .burbuja b { color: var(--acento); font-weight: 700; }
+  .de-yo b { color: #6b4a03; }
+  .compositor { display: flex; gap: 9px; padding-top: 12px; border-top: 1px solid var(--linea); }
+  .escribiendo { align-self: flex-start; display: flex; gap: 4px; padding: 14px 16px; }
+  .escribiendo i { width: 7px; height: 7px; border-radius: 50%; background: var(--texto-3); animation: pulso 1.2s infinite; }
+  .escribiendo i:nth-child(2) { animation-delay: .18s } .escribiendo i:nth-child(3) { animation-delay: .36s }
+  @keyframes pulso { 0%,60%,100%{opacity:.3;transform:translateY(0)} 30%{opacity:1;transform:translateY(-3px)} }
+  .fuente { padding: 9px 11px; border-radius: 8px; background: var(--tinta); border: 1px solid var(--linea); font-size: .8rem; }
+  .fuente + .fuente { margin-top: 7px; }
+  .tema { padding: 8px 11px; border-radius: 8px; cursor: pointer; font-size: .82rem; color: var(--texto-2); transition: .13s; }
+  .tema:hover { background: var(--tinta-3); color: var(--acento); }
+</style>
+</head>
+<body>
+<div id="barra"></div>
+
+<main class="contenedor seccion-s">
+  <span class="etiqueta morada">Modulo 02</span>
+  <h1 style="margin-top:10px">Asistente de inteligencia artificial de la ferreteria</h1>
+  <p style="max-width:78ch">
+    No es un chatbot generico con respuestas de internet. Este asistente <b>solo sabe de esta ferreteria</b>:
+    consulta el catalogo vivo, el stock del momento, el nivel de precio del cliente y una base de criterio
+    tecnico de obra. Cada cifra que dice sale del sistema, no del modelo.
+  </p>
+
+  <div class="grid" id="grid" style="grid-template-columns:1fr 340px;align-items:start;margin-top:22px">
+    <div class="tarjeta">
+      <div class="fila-sb" style="margin-bottom:12px">
+        <div class="fila">
+          <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--morado),var(--cian));display:grid;place-items:center;font-size:19px">🤖</div>
+          <div>
+            <div style="font-weight:700">Asistente Ferreteria 360</div>
+            <div class="micro" id="motor">consultando motor...</div>
+          </div>
+        </div>
+        <select id="cliente" style="width:auto;max-width:260px">
+          <option value="">Visitante (precio de lista)</option>
+        </select>
+      </div>
+
+      <div class="chat">
+        <div class="hilo" id="hilo"></div>
+        <div id="chips" class="wrap" style="display:flex;padding-top:8px"></div>
+        <form class="compositor" id="form">
+          <input id="entrada" placeholder="Escriba como le hablaria a un vendedor..." autocomplete="off">
+          <button class="boton" type="submit">Enviar</button>
+        </form>
+      </div>
+    </div>
+
+    <div>
+      <div class="tarjeta">
+        <h3>Que consulto para responder</h3>
+        <p class="micro" style="margin:4px 0 12px">Trazabilidad de la ultima respuesta.</p>
+        <div id="fuentes"><p class="nada">Aun no hay consulta.</p></div>
+      </div>
+
+      <div class="tarjeta" style="margin-top:14px">
+        <h3>Sabe responder de esto</h3>
+        <p class="micro" style="margin:4px 0 8px">Pulse un tema para probarlo.</p>
+        <div id="temas" class="cargando">...</div>
+      </div>
+
+      <div class="tarjeta" style="margin-top:14px">
+        <h3>Como esta construido</h3>
+        <ul class="mini" style="padding-left:17px;margin:8px 0 0;color:var(--texto-2)">
+          <li>Motor propio deterministico: entiende intencion, cantidades y fechas sin costo por mensaje.</li>
+          <li>Base de conocimiento tecnica y de politicas del negocio.</li>
+          <li>Precios, stock y cartera consultados en vivo al ERP.</li>
+          <li>Claude (opcional) solo redacta; nunca inventa cifras.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</main>
+<div id="pie"></div>
+
+<script type="module">
+import { api, barra, pie, esc, $, aviso, COP } from './assets/app.js';
+
+$('#barra').innerHTML = barra('/asistente');
+$('#pie').innerHTML = pie();
+
+const sesion = 'web-' + Math.random().toString(36).slice(2, 8);
+const { clientes } = await api.get('/api/admin/clientes');
+$('#cliente').innerHTML += clientes.map((c) => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
+
+const { ia } = await api.get('/api/ia/estado');
+$('#motor').textContent = `en linea · ${ia.motor}`;
+
+const { temas } = await api.get('/api/ia/temas');
+$('#temas').innerHTML = temas.slice(0, 12)
+  .map((t) => `<div class="tema" data-q="${esc(t.pregunta)}">${esc(t.pregunta)}</div>`).join('');
+$('#temas').classList.remove('cargando');
+$('#temas').addEventListener('click', (e) => {
+  const t = e.target.closest('.tema');
+  if (t) enviar(t.dataset.q);
+});
+
+function formatear(txt) {
+  return esc(txt).replace(/\*([^*]+)\*/g, '<b>$1</b>').replace(/_([^_]+)_/g, '<i>$1</i>');
+}
+
+function agregar(texto, quien) {
+  const d = document.createElement('div');
+  d.className = 'burbuja ' + (quien === 'yo' ? 'de-yo' : 'de-bot');
+  d.innerHTML = formatear(texto);
+  $('#hilo').appendChild(d);
+  $('#hilo').scrollTop = $('#hilo').scrollHeight;
+  return d;
+}
+
+function pintarChips(lista) {
+  $('#chips').innerHTML = (lista || []).map((c) => `<span class="chip">${esc(c)}</span>`).join('');
+  $('#chips').querySelectorAll('.chip').forEach((c) =>
+    c.addEventListener('click', () => enviar(c.textContent)));
+}
+
+function pintarFuentes(r) {
+  const i = r.interpretacion || {};
+  const partes = [`<div class="fuente"><b>Intencion detectada</b><br>
+    <span class="mono acento">${esc(i.intencion || '-')}</span>
+    <span class="micro"> (confianza ${Math.round((i.confianza || 0) * 100)}%)</span></div>`];
+
+  if (r.conversacion?.cliente) {
+    partes.push(`<div class="fuente"><b>Cliente reconocido</b><br>${esc(r.conversacion.cliente.nombre)}
+      — nivel <span class="acento">${esc(r.conversacion.cliente.nivel)}</span></div>`);
+  }
+  if (r.conversacion?.carrito?.length) {
+    partes.push(`<div class="fuente"><b>Pedido en construccion</b><br>
+      ${r.conversacion.carrito.map((c) => `${c.cantidad} x <span class="mono">${esc(c.sku)}</span>`).join('<br>')}</div>`);
+  }
+  partes.push(`<div class="fuente"><b>Motor de respuesta</b><br>${esc(r.motor)}
+    ${r.uso ? `<span class="micro"><br>${r.uso.entrada} tokens de entrada / ${r.uso.salida} de salida</span>` : ''}</div>`);
+  $('#fuentes').innerHTML = partes.join('');
+}
+
+let ocupado = false;
+async function enviar(texto) {
+  if (ocupado || !texto?.trim()) return;
+  ocupado = true;
+  agregar(texto, 'yo');
+  $('#entrada').value = '';
+  pintarChips([]);
+
+  const esperando = document.createElement('div');
+  esperando.className = 'escribiendo';
+  esperando.innerHTML = '<i></i><i></i><i></i>';
+  $('#hilo').appendChild(esperando);
+  $('#hilo').scrollTop = $('#hilo').scrollHeight;
+
+  try {
+    const r = await api.post('/api/asistente', {
+      mensaje: texto,
+      clienteId: $('#cliente').value || null,
+      sesion,
+    });
+    esperando.remove();
+    for (const m of r.respuestas) agregar(m.texto, 'bot');
+    pintarChips(r.respuestas.at(-1)?.chips);
+    pintarFuentes(r);
+  } catch (e) {
+    esperando.remove();
+    aviso(e.message, 'error');
+  } finally {
+    ocupado = false;
+    $('#entrada').focus();
+  }
+}
+
+$('#form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  enviar($('#entrada').value);
+});
+
+agregar(
+  'Buen dia. Soy el asistente de la ferreteria.\n\nLe puedo decir precios y existencias al instante, calcular cuanto material necesita para su obra, resolverle dudas tecnicas y dejarle el pedido armado.\n\nEn que le ayudo?',
+  'bot'
+);
+pintarChips([
+  'Cuanto material necesito para una placa de 6x4',
+  'Cuanto vale el bulto de cemento',
+  'Que pegante uso para porcelanato',
+  'Hacen domicilios',
+]);
+</script>
+</body>
+</html>

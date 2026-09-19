@@ -1,0 +1,1369 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Propuesta de plataforma integral para ferreteria: simulador de materiales, asistente de IA, bot de WhatsApp, portal de clientes y sistema interno.">
+<style>img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Propuesta Ferretería</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+
+<style>
+:root{
+  /* ---- papel: la propuesta impresa ---- */
+  --papel:#f3f1ec;
+  --papel-2:#fbfaf7;
+  --tinta:#171c21;
+  --tinta-2:#40474e;
+  --tinta-3:#6d757d;
+  --regla:#d8d4cb;
+  --regla-2:#e8e5de;
+  /* ---- acentos de obra ---- */
+  --ambar:#e0a106;
+  --ambar-suave:#fbf0d2;
+  --oxido:#a8492a;
+  --verde:#2c7355;
+  --acero:#39424c;
+  /* ---- pantalla: los equipos embebidos (constante en ambos temas) ---- */
+  --scr:#0d1319;
+  --scr-2:#141d26;
+  --scr-linea:#26323f;
+  --scr-txt:#e6ecf3;
+  --scr-txt-2:#93a3b5;
+  --wa:#0b141a;
+  --wa-in:#1f2c34;
+  --wa-out:#005c4b;
+
+  --max:1180px;
+  --col:74ch;
+  --f-tit:'Barlow Condensed',ui-sans-serif,system-ui,sans-serif;
+  --f-txt:'Source Sans 3',ui-sans-serif,system-ui,sans-serif;
+  --f-num:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --papel:#14181c;
+    --papel-2:#1b2127;
+    --tinta:#eef1f4;
+    --tinta-2:#b3bcc4;
+    --tinta-3:#828d97;
+    --regla:#2c343c;
+    --regla-2:#242b32;
+    --ambar:#f0b52a;
+    --ambar-suave:#2e2611;
+    --oxido:#d97a55;
+    --verde:#57b98d;
+    --acero:#c3ccd4;
+  }
+}
+:root[data-theme="dark"]{
+  --papel:#14181c; --papel-2:#1b2127; --tinta:#eef1f4; --tinta-2:#b3bcc4;
+  --tinta-3:#828d97; --regla:#2c343c; --regla-2:#242b32; --ambar:#f0b52a;
+  --ambar-suave:#2e2611; --oxido:#d97a55; --verde:#57b98d; --acero:#c3ccd4;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--papel);color:var(--tinta);
+  font-family:var(--f-txt);font-size:17px;line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+.env{width:min(var(--max),100%);margin-inline:auto;padding-inline:20px}
+.col{max-width:var(--col)}
+
+h1,h2,h3,h4{font-family:var(--f-tit);font-weight:700;line-height:1.04;margin:0;text-wrap:balance;letter-spacing:-.005em}
+h1{font-size:clamp(2.7rem,7.5vw,5.1rem);text-transform:uppercase}
+h2{font-size:clamp(1.85rem,4vw,2.9rem);text-transform:uppercase}
+h3{font-size:clamp(1.25rem,2.3vw,1.6rem)}
+h4{font-size:1.06rem;font-weight:600}
+p{margin:0 0 1.05em}
+a{color:var(--oxido)}
+
+/* ---------- retícula de plano: numeración de sección al margen ---------- */
+.seccion{padding-block:clamp(42px,7vw,86px);border-top:1px solid var(--regla)}
+.seccion:first-of-type{border-top:0}
+.cabeza{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start;margin-bottom:26px}
+.folio{
+  font-family:var(--f-num);font-size:.78rem;font-weight:600;color:var(--ambar);
+  border:1px solid var(--ambar);border-radius:2px;padding:3px 7px;white-space:nowrap;
+  margin-top:.5em;
+}
+.rotulo{
+  font-family:var(--f-num);font-size:.71rem;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--tinta-3);display:block;margin-bottom:8px
+}
+.entrada{font-size:1.14rem;color:var(--tinta-2);max-width:68ch}
+
+/* ------------------------------- portada ------------------------------- */
+.portada{
+  padding-block:clamp(34px,6vw,64px) clamp(30px,5vw,56px);
+  border-bottom:3px solid var(--tinta);
+}
+.membrete{
+  display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;justify-content:space-between;
+  font-family:var(--f-num);font-size:.76rem;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--tinta-3);border-bottom:1px solid var(--regla);padding-bottom:12px;margin-bottom:clamp(26px,5vw,50px)
+}
+.membrete b{color:var(--tinta);font-weight:600}
+.titular span{color:var(--ambar)}
+.lema{
+  font-family:var(--f-tit);font-size:clamp(1.2rem,2.7vw,1.8rem);font-weight:500;
+  color:var(--tinta-2);max-width:32ch;margin:18px 0 0;line-height:1.22
+}
+.cintas{display:flex;flex-wrap:wrap;gap:8px;margin-top:28px}
+.cinta{
+  font-family:var(--f-num);font-size:.73rem;font-weight:500;padding:6px 11px;
+  background:var(--ambar-suave);color:var(--tinta);border:1px solid var(--regla);border-radius:2px
+}
+.acciones{display:flex;flex-wrap:wrap;gap:11px;margin-top:30px}
+.btn{
+  font-family:var(--f-tit);font-size:1.02rem;font-weight:600;letter-spacing:.02em;text-transform:uppercase;
+  padding:11px 20px;border:2px solid var(--tinta);background:var(--tinta);color:var(--papel);
+  border-radius:2px;cursor:pointer;text-decoration:none;display:inline-block;transition:.14s
+}
+.btn:hover{background:var(--ambar);border-color:var(--ambar);color:#171c21}
+.btn.hueco{background:transparent;color:var(--tinta)}
+.btn.hueco:hover{background:var(--tinta);color:var(--papel)}
+.btn.chico{font-size:.86rem;padding:7px 13px;border-width:1px}
+
+/* --------------------------------- listas ------------------------------ */
+.dolor{list-style:none;padding:0;margin:0;display:grid;gap:2px}
+.dolor li{
+  display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:baseline;
+  padding:15px 0;border-bottom:1px solid var(--regla-2)
+}
+.dolor li:last-child{border-bottom:0}
+.dolor .marca{font-family:var(--f-num);font-size:.76rem;color:var(--oxido);font-weight:600}
+.dolor b{display:block;font-family:var(--f-tit);font-size:1.2rem;font-weight:600;margin-bottom:2px}
+.dolor span.txt{color:var(--tinta-2);font-size:.97rem}
+
+/* --------------------------------- módulos ----------------------------- */
+.modulos{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:1px;background:var(--regla);border:1px solid var(--regla)}
+.modulo{background:var(--papel-2);padding:22px}
+.modulo .n{font-family:var(--f-num);font-size:.72rem;color:var(--ambar);font-weight:600;letter-spacing:.1em}
+.modulo h4{margin:9px 0 7px;font-family:var(--f-tit);font-size:1.28rem;font-weight:700}
+.modulo p{font-size:.94rem;color:var(--tinta-2);margin:0}
+.modulo ul{margin:10px 0 0;padding-left:17px;font-size:.89rem;color:var(--tinta-2)}
+.modulo li{margin-bottom:3px}
+
+/* -------------------------- pantallas embebidas ------------------------ */
+.equipo{
+  background:var(--scr);border:1px solid var(--scr-linea);border-radius:10px;
+  color:var(--scr-txt);overflow:hidden;box-shadow:0 26px 48px -30px rgba(0,0,0,.6)
+}
+.equipo-barra{
+  display:flex;align-items:center;gap:8px;padding:9px 13px;background:var(--scr-2);
+  border-bottom:1px solid var(--scr-linea);font-family:var(--f-num);font-size:.72rem;color:var(--scr-txt-2)
+}
+.punto{width:9px;height:9px;border-radius:50%;background:#37434f}
+.equipo-cuerpo{padding:18px}
+.pie-equipo{font-family:var(--f-num);font-size:.73rem;color:var(--tinta-3);margin-top:10px}
+
+/* calculadora */
+.calc{display:grid;grid-template-columns:270px 1fr;gap:18px}
+.calc-panel{display:grid;gap:12px;align-content:start}
+.obra-sel{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.obra-btn{
+  font-family:var(--f-tit);font-size:.98rem;font-weight:600;padding:9px 6px;cursor:pointer;
+  background:transparent;border:1px solid var(--scr-linea);color:var(--scr-txt-2);border-radius:5px;transition:.13s
+}
+.obra-btn:hover{border-color:var(--ambar);color:var(--scr-txt)}
+.obra-btn[aria-pressed="true"]{background:var(--ambar);border-color:var(--ambar);color:#171c21}
+.campo label{
+  display:block;font-family:var(--f-num);font-size:.68rem;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--scr-txt-2);margin-bottom:4px
+}
+.campo input,.campo select{
+  width:100%;padding:8px 10px;background:var(--scr);border:1px solid var(--scr-linea);
+  color:var(--scr-txt);border-radius:5px;font-family:var(--f-num);font-size:.9rem
+}
+.campo input:focus,.campo select:focus{outline:2px solid var(--ambar);outline-offset:-1px;border-color:var(--ambar)}
+.campo select option{background:#141d26;color:#e6ecf3}
+
+.tabla-mat{width:100%;border-collapse:collapse;font-size:.86rem;color:var(--scr-txt)}
+.tabla-mat td{color:var(--scr-txt)}
+.tabla-mat th{
+  text-align:left;font-family:var(--f-num);font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--scr-txt-2);padding:7px 8px;border-bottom:1px solid var(--scr-linea);font-weight:500
+}
+.tabla-mat td{padding:9px 8px;border-bottom:1px solid rgba(38,50,63,.6);vertical-align:top}
+.tabla-mat tr:last-child td{border-bottom:0}
+.num{font-family:var(--f-num);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sku{font-family:var(--f-num);font-size:.7rem;color:var(--scr-txt-2);display:block}
+.total-obra{
+  display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:baseline;
+  margin-top:14px;padding-top:13px;border-top:2px solid var(--ambar)
+}
+.total-obra .plata{font-family:var(--f-num);font-size:1.75rem;font-weight:600;color:var(--ambar)}
+.memoria{
+  margin-top:12px;background:rgba(240,181,42,.05);border-left:2px solid var(--ambar);
+  padding:10px 13px;font-family:var(--f-num);font-size:.72rem;color:var(--scr-txt-2);line-height:1.75
+}
+.memoria div{margin-bottom:3px}
+.consejo{
+  margin-top:11px;padding:10px 13px;border:1px dashed var(--scr-linea);border-radius:5px;
+  font-size:.86rem;color:var(--scr-txt-2)
+}
+.consejo b{color:var(--ambar);font-weight:600}
+
+/* whatsapp */
+.wa-demo{display:grid;grid-template-columns:330px 1fr;gap:20px;align-items:start}
+.wa{background:var(--wa);border-radius:12px;overflow:hidden;border:1px solid var(--scr-linea)}
+.wa-top{display:flex;gap:10px;align-items:center;padding:10px 13px;background:var(--wa-in)}
+.wa-foto{
+  width:34px;height:34px;border-radius:50%;background:var(--ambar);color:#171c21;
+  display:grid;place-items:center;font-family:var(--f-tit);font-weight:700;font-size:.95rem
+}
+.wa-cuerpo{
+  height:406px;overflow-y:auto;padding:13px 11px;display:flex;flex-direction:column;gap:6px;
+  background-image:radial-gradient(circle at 22% 24%,rgba(255,255,255,.02) 0 2px,transparent 2px);
+  background-size:42px 42px;scroll-behavior:smooth
+}
+.wa-msg{
+  max-width:84%;padding:7px 10px 5px;border-radius:8px;font-size:.82rem;line-height:1.45;
+  color:#e9edef;white-space:pre-wrap;animation:aparece .24s ease both
+}
+.wa-in-m{background:var(--wa-in);align-self:flex-start;border-top-left-radius:2px}
+.wa-out-m{background:var(--wa-out);align-self:flex-end;border-top-right-radius:2px}
+.wa-msg b{color:#fff}
+.wa-hora{font-size:.6rem;color:#8696a0;float:right;margin:5px 0 0 8px}
+@keyframes aparece{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.wa-pie{display:flex;gap:7px;padding:9px;background:var(--wa-in);flex-wrap:wrap}
+.wa-chip{
+  font-size:.74rem;padding:5px 10px;border-radius:14px;background:rgba(255,255,255,.08);
+  color:#dfe7ec;border:0;cursor:pointer;font-family:var(--f-txt)
+}
+.wa-chip:hover{background:var(--ambar);color:#171c21}
+.wa-chip:disabled{opacity:.35;cursor:default}
+.traza{display:grid;gap:8px}
+.traza-item{
+  padding:10px 13px;border-left:2px solid var(--scr-linea);background:var(--scr-2);
+  border-radius:0 6px 6px 0;font-size:.85rem;color:var(--scr-txt-2);animation:aparece .3s ease both
+}
+.traza-item b{color:var(--scr-txt);display:block;font-family:var(--f-tit);font-size:1rem;font-weight:600;margin-bottom:1px}
+.traza-item.hito{border-left-color:var(--ambar)}
+.traza-item.ok{border-left-color:#3fae7d}
+
+/* erp */
+.erp-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--scr-linea);border:1px solid var(--scr-linea);border-radius:7px;overflow:hidden}
+.erp-kpi{background:var(--scr-2);padding:13px 15px}
+.erp-kpi .et{font-family:var(--f-num);font-size:.64rem;letter-spacing:.09em;text-transform:uppercase;color:var(--scr-txt-2)}
+.erp-kpi .vl{font-family:var(--f-num);font-size:1.42rem;font-weight:600;margin-top:3px;font-variant-numeric:tabular-nums}
+.erp-kpi .sub{font-size:.75rem;color:var(--scr-txt-2);margin-top:2px}
+.sube{color:#3fae7d}.baja{color:#e06d5f}
+.erp-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-top:14px}
+.panel{background:var(--scr-2);border:1px solid var(--scr-linea);border-radius:7px;padding:15px}
+.panel h5{
+  margin:0 0 10px;font-family:var(--f-tit);font-size:1.08rem;font-weight:600;
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px
+}
+.panel h5 em{font-family:var(--f-num);font-size:.68rem;font-style:normal;color:var(--scr-txt-2)}
+.dias{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px}
+.dia{background:var(--scr);border:1px solid var(--scr-linea);border-radius:6px;padding:9px}
+.dia .d{font-family:var(--f-tit);font-size:.95rem;font-weight:600}
+.dia .c{font-family:var(--f-num);font-size:1.3rem;color:var(--ambar);font-variant-numeric:tabular-nums}
+.dia .m{font-size:.7rem;color:var(--scr-txt-2)}
+.fila-alerta{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(38,50,63,.6);font-size:.83rem}
+.fila-alerta:last-child{border-bottom:0}
+.sem{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:7px;vertical-align:middle}
+
+/* --------------------------------- tablas ------------------------------ */
+.tabla-env{overflow-x:auto;border:1px solid var(--regla);border-radius:3px;background:var(--papel-2)}
+table.doc{width:100%;border-collapse:collapse;font-size:.93rem;min-width:520px;color:var(--tinta)}
+table.doc td{color:var(--tinta)}
+table.doc th{
+  text-align:left;font-family:var(--f-num);font-size:.67rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--tinta-3);padding:11px 14px;border-bottom:1px solid var(--regla);font-weight:600;background:var(--papel)
+}
+table.doc td{padding:12px 14px;border-bottom:1px solid var(--regla-2);vertical-align:top}
+table.doc tr:last-child td{border-bottom:0}
+table.doc .n{font-family:var(--f-num);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ------------------------------- comparativo --------------------------- */
+.antes-despues{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.ad{border:1px solid var(--regla);border-radius:3px;padding:17px;background:var(--papel-2)}
+.ad .q{font-family:var(--f-tit);font-size:1.12rem;font-weight:600;margin-bottom:11px}
+.ad .a{font-family:var(--f-num);font-size:.84rem;color:var(--tinta-3);text-decoration:line-through;text-decoration-color:var(--oxido)}
+.ad .b{font-family:var(--f-num);font-size:1.5rem;font-weight:600;color:var(--verde);margin-top:3px;font-variant-numeric:tabular-nums}
+.ad .n{font-size:.83rem;color:var(--tinta-2);margin-top:7px}
+
+/* -------------------------------- fases -------------------------------- */
+.fases{display:grid;gap:0;border:1px solid var(--regla);border-radius:3px;overflow:hidden}
+.fase{display:grid;grid-template-columns:78px 1fr;gap:16px;padding:17px 18px;background:var(--papel-2);border-bottom:1px solid var(--regla)}
+.fase:last-child{border-bottom:0}
+.fase .sem{width:auto;height:auto;border-radius:0;background:none;margin:0;font-family:var(--f-num);font-size:.76rem;color:var(--ambar);font-weight:600}
+.fase h4{font-family:var(--f-tit);font-size:1.22rem;font-weight:700;margin-bottom:3px}
+.fase p{margin:0;font-size:.92rem;color:var(--tinta-2)}
+
+/* ------------------------------ inversión ------------------------------ */
+.precios{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:14px}
+.precio{border:1px solid var(--regla);border-radius:3px;padding:20px;background:var(--papel-2);display:flex;flex-direction:column}
+.precio.destacado{border:2px solid var(--ambar);background:var(--ambar-suave)}
+.precio .tipo{font-family:var(--f-num);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--tinta-3)}
+.precio h4{font-family:var(--f-tit);font-size:1.4rem;font-weight:700;margin:7px 0 3px}
+.precio .cifra{font-family:var(--f-num);font-size:2.05rem;font-weight:600;margin:9px 0 2px;font-variant-numeric:tabular-nums}
+.precio .cond{font-size:.82rem;color:var(--tinta-3);margin-bottom:12px}
+.precio ul{list-style:none;padding:0;margin:0 0 auto;display:grid;gap:6px;font-size:.9rem}
+.precio li{display:grid;grid-template-columns:auto 1fr;gap:8px;color:var(--tinta-2)}
+.precio li::before{content:"—";color:var(--ambar);font-family:var(--f-num)}
+.nota{font-size:.85rem;color:var(--tinta-3);border-left:2px solid var(--regla);padding-left:13px;margin-top:16px}
+
+
+/* -------------------------------- cierre ------------------------------- */
+.cierre{background:var(--tinta);color:var(--papel);border-radius:4px;padding:clamp(26px,5vw,48px)}
+.cierre h2{color:var(--papel)}
+.cierre p{color:rgba(243,241,236,.76)}
+.cierre .btn{border-color:var(--ambar);background:var(--ambar);color:#171c21}
+.cierre .btn.hueco{background:transparent;color:var(--papel);border-color:rgba(243,241,236,.45)}
+.cierre .btn.hueco:hover{background:var(--papel);color:var(--tinta)}
+.pasos{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:14px;margin:26px 0}
+.paso{border-top:2px solid var(--ambar);padding-top:11px}
+.paso .p{font-family:var(--f-num);font-size:.7rem;color:var(--ambar);letter-spacing:.1em}
+.paso b{display:block;font-family:var(--f-tit);font-size:1.16rem;font-weight:600;margin:3px 0 2px}
+.paso span{font-size:.86rem;color:rgba(243,241,236,.7)}
+
+footer{border-top:1px solid var(--regla);padding-block:22px 34px;font-family:var(--f-num);font-size:.73rem;color:var(--tinta-3)}
+.firma{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
+
+@media (max-width:860px){
+  .calc,.wa-demo,.erp-grid{grid-template-columns:1fr}
+  .fase{grid-template-columns:58px 1fr;row-gap:6px;gap:12px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<header class="env portada">
+  <div class="membrete">
+    <span><b>Soluciones Tecnológicas DNV</b> · Desarrollo a medida</span>
+    <span>Documento confidencial · Vigencia 30 días</span>
+  </div>
+
+  <span class="rotulo">Propuesta de transformación digital</span>
+  <h1 class="titular">Propuesta<br><span>Ferretería</span></h1>
+  <p class="lema">Una sola plataforma para vender, cotizar y controlar: el mostrador, la web, WhatsApp y la bodega mirando el mismo inventario.</p>
+
+  <div class="cintas">
+    <span class="cinta">5 módulos</span>
+    <span class="cinta">10 simuladores de obra</span>
+    <span class="cinta">Bot con conocimiento total</span>
+    <span class="cinta">ERP con inventario y finanzas</span>
+    <span class="cinta">7 semanas</span>
+  </div>
+
+  <div class="acciones">
+    <a class="btn" href="#simuladores">Ver los simuladores</a>
+    <a class="btn hueco" href="#inversion">Ir a la inversión</a>
+    <a class="btn hueco" href="demo/" target="_blank" rel="noopener">Abrir la plataforma en vivo</a>
+  </div>
+</header>
+
+</head>
+<body>
+<main class="env">
+
+<!-- ====================================================== 01 DIAGNÓSTICO -->
+<section class="seccion" id="diagnostico">
+  <div class="cabeza">
+    <span class="folio">01</span>
+    <div>
+      <span class="rotulo">Diagnóstico</span>
+      <h2>Dónde se está yendo la plata hoy</h2>
+    </div>
+  </div>
+
+  <p class="entrada col">No son fallas de esfuerzo: son fugas de un negocio que creció más rápido que sus herramientas. Cada una tiene un costo que ya se está pagando, solo que no aparece en ningún informe.</p>
+
+  <ul class="dolor col" style="max-width:none">
+    <li>
+      <span class="marca">A</span>
+      <div>
+        <b>Cotizar una obra toma 40 minutos</b>
+        <span class="txt">Un contratista llega con la lista de una placa o un muro. Alguien saca calculadora, busca precios y arma la cuenta a mano. Mientras tanto no atiende mostrador, y si se equivoca en el desperdicio, el error lo paga la ferretería.</span>
+      </div>
+    </li>
+    <li>
+      <span class="marca">B</span>
+      <div>
+        <b>Nadie sabe con certeza qué hay en bodega</b>
+        <span class="txt">El asesor promete 40 bultos, la bodega tiene 22. El cliente se va a la ferretería de enfrente y ese cliente normalmente no vuelve por un solo producto: vuelve por toda la obra.</span>
+      </div>
+    </li>
+    <li>
+      <span class="marca">C</span>
+      <div>
+        <b>Fuera de horario el negocio está cerrado</b>
+        <span class="txt">El domingo a las 7 p.m. un maestro define qué compra para el lunes. Si nadie contesta, decide con quien sí le responda. Ese es el turno en que más se pierden clientes fijos.</span>
+      </div>
+    </li>
+    <li>
+      <span class="marca">D</span>
+      <div>
+        <b>El descuento lo define el criterio de cada asesor</b>
+        <span class="txt">Al mismo cliente le dan 8 % un día y 15 % otro. En cemento y acero, donde el margen real ronda el 14 %, un 15 % de descuento significa vender por debajo del costo sin que nadie lo note.</span>
+      </div>
+    </li>
+    <li>
+      <span class="marca">E</span>
+      <div>
+        <b>Para saber cómo va el negocio hay que estar en el local</b>
+        <span class="txt">Cuadrar caja, revisar cartera y decidir qué comprar exige presencia física y memoria. La información existe, pero está repartida entre un cuaderno, un Excel y la cabeza de tres personas.</span>
+      </div>
+    </li>
+  </ul>
+</section>
+
+<!-- ========================================================= 02 SOLUCIÓN -->
+<section class="seccion" id="solucion">
+  <div class="cabeza">
+    <span class="folio">02</span>
+    <div>
+      <span class="rotulo">Alcance</span>
+      <h2>Cinco módulos, una sola base de datos</h2>
+    </div>
+  </div>
+
+  <p class="entrada col">Esa última frase es la propuesta entera. Lo que el bot vende el domingo a las 8 p.m. ya está descontado del inventario que el asesor ve el lunes a las 7 a.m. No hay una base para la web y otra para el local.</p>
+
+  <div class="modulos">
+    <article class="modulo">
+      <span class="n">MÓDULO 01</span>
+      <h4>Simulador de materiales</h4>
+      <p>El cliente pone las medidas de su obra y recibe la lista exacta de material, con la memoria de cálculo a la vista y el precio que le corresponde.</p>
+      <ul>
+        <li>10 tipos de obra: muro, placa, enchape, pintura, drywall, columnas, cubierta, pañete, cimentación y red eléctrica</li>
+        <li>Fórmulas de práctica colombiana y NSR-10</li>
+        <li>Cantidades redondeadas a la unidad de venta real</li>
+        <li>Herramienta sugerida aparte, sin inflar el total</li>
+        <li>Cotización guardada con número y vigencia</li>
+      </ul>
+    </article>
+
+    <article class="modulo">
+      <span class="n">MÓDULO 02</span>
+      <h4>Asistente de IA propio</h4>
+      <p>No es un chat genérico con respuestas de internet. Solo sabe de esta ferretería y cada cifra que dice sale del sistema.</p>
+      <ul>
+        <li>Consulta catálogo, stock y nivel de precio en vivo</li>
+        <li>Criterio técnico de obra, no solo precios</li>
+        <li>Recomienda lo que falta, lo que ahorra y lo que no hay</li>
+        <li>Motor propio sin costo por mensaje, con modelo Claude opcional encima</li>
+      </ul>
+    </article>
+
+    <article class="modulo">
+      <span class="n">MÓDULO 03</span>
+      <h4>Bot de WhatsApp</h4>
+      <p>El mismo cerebro atendiendo por el canal donde el cliente ya está. Reconoce al cliente fijo por su número.</p>
+      <ul>
+        <li>Toma el pedido conversando, en lenguaje de obra</li>
+        <li>«Lo de siempre» repite el pedido habitual</li>
+        <li>Valida existencias y cupo de crédito antes de confirmar</li>
+        <li>Agenda la fecha de entrega</li>
+        <li>Escala a un asesor humano cuando corresponde</li>
+      </ul>
+    </article>
+
+    <article class="modulo">
+      <span class="n">MÓDULO 04</span>
+      <h4>Portal de clientes fijos</h4>
+      <p>Los clientes recurrentes entran con su clave y se autoatienden, sin ocupar el teléfono del local.</p>
+      <ul>
+        <li>Su lista de precios, con el descuento ya aplicado</li>
+        <li>Pedido en un minuto desde sus productos habituales</li>
+        <li>Cotizador en tiempo real sobre todo el catálogo</li>
+        <li>Cupo disponible, cartera y seguimiento de despacho</li>
+      </ul>
+    </article>
+
+    <article class="modulo">
+      <span class="n">MÓDULO 05</span>
+      <h4>Sistema interno</h4>
+      <p>Lo que el dueño abre cada mañana y puede revisar desde el celular estando donde esté.</p>
+      <ul>
+        <li>Agenda de pedidos de los próximos días y lista de alistamiento consolidada</li>
+        <li>Inventario valorizado, rotación, cobertura y clasificación ABC</li>
+        <li>Cierre de caja, estado de resultados y flujo de caja proyectado</li>
+        <li>Cartera con edades y uso de cupo por cliente</li>
+        <li>Qué comprar, calculado por consumo real</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<!-- ====================================================== 03 SIMULADORES -->
+<section class="seccion" id="simuladores">
+  <div class="cabeza">
+    <span class="folio">03</span>
+    <div>
+      <span class="rotulo">Demostración funcional</span>
+      <h2>No es una maqueta: pruébelo aquí mismo</h2>
+    </div>
+  </div>
+
+  <p class="entrada col">Los tres simuladores de abajo funcionan de verdad. Las fórmulas, los precios y las cantidades son los mismos que quedarían en producción. Cambie las medidas y vea qué pasa.</p>
+</section>
+
+<!-- --------------------------------------------- SIMULADOR 1: CALCULADORA -->
+<section class="seccion" style="border-top:0;padding-top:0">
+  <div class="cabeza">
+    <span class="folio">3.1</span>
+    <div>
+      <span class="rotulo">Simulador · lo que ve el cliente en la web</span>
+      <h3 style="font-size:clamp(1.4rem,2.6vw,1.9rem);text-transform:none">Calculadora de materiales de obra</h3>
+    </div>
+  </div>
+
+  <div class="equipo">
+    <div class="equipo-barra">
+      <span class="punto"></span><span class="punto"></span><span class="punto"></span>
+      <span style="margin-left:6px">ferreteria.com.co / simulador</span>
+    </div>
+    <div class="equipo-cuerpo">
+      <div class="calc">
+        <div class="calc-panel">
+          <div class="obra-sel" id="obras" role="group" aria-label="Tipo de obra"></div>
+          <div id="campos" style="display:grid;gap:11px"></div>
+          <div class="campo">
+            <label for="nivel">Quién cotiza</label>
+            <select id="nivel">
+              <option value="0">Cliente de mostrador</option>
+              <option value="0.06">Constructor · 6 %</option>
+              <option value="0.12">Mayorista · 12 %</option>
+              <option value="0.18">Aliado estratégico · 18 %</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <div style="overflow-x:auto"><table class="tabla-mat">
+            <thead><tr>
+              <th>Material</th><th class="num">Cantidad</th><th class="num">Unitario</th><th class="num">Subtotal</th>
+            </tr></thead>
+            <tbody id="filas"></tbody>
+          </table></div>
+
+          <div class="total-obra">
+            <div>
+              <div style="font-family:var(--f-num);font-size:.68rem;letter-spacing:.09em;text-transform:uppercase;color:var(--scr-txt-2)">Total materiales · IVA incluido</div>
+              <div id="magnitud" style="font-size:.84rem;color:var(--scr-txt-2);margin-top:2px"></div>
+            </div>
+            <div class="plata" id="total">$0</div>
+          </div>
+
+          <div class="memoria" id="memoria"></div>
+          <div class="consejo" id="consejo"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="pie-equipo">El cálculo corre en esta misma página. El desperdicio, la dosificación y el redondeo a unidad de venta son los reales. <a href="demo/simulador.html" target="_blank" rel="noopener"><b>Abrir esta pantalla completa &rarr;</b></a></p>
+</section>
+
+<!-- ----------------------------------------------- SIMULADOR 2: WHATSAPP -->
+<section class="seccion" style="border-top:0">
+  <div class="cabeza">
+    <span class="folio">3.2</span>
+    <div>
+      <span class="rotulo">Simulador · lo que pasa un domingo a las 8 p.m.</span>
+      <h3 style="font-size:clamp(1.4rem,2.6vw,1.9rem);text-transform:none">Un cliente fijo pide por WhatsApp</h3>
+    </div>
+  </div>
+
+  <div class="wa-demo">
+    <div class="wa">
+      <div class="wa-top">
+        <div class="wa-foto">F</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:.9rem;color:#e9edef">Ferretería</div>
+          <div style="font-size:.7rem;color:#8696a0" id="wa-estado">en línea</div>
+        </div>
+      </div>
+      <div class="wa-cuerpo" id="wa-chat" aria-live="polite"></div>
+      <div class="wa-pie" id="wa-chips"></div>
+    </div>
+
+    <div>
+      <h4 style="font-family:var(--f-tit);font-size:1.3rem;margin-bottom:4px">Lo que hace el sistema en ese mismo segundo</h4>
+      <p style="font-size:.94rem;color:var(--tinta-2);margin-bottom:14px">Cada mensaje mueve datos reales. Esto es lo que el asesor encuentra el lunes a primera hora, sin haber hecho nada.</p>
+      <div class="traza" id="wa-traza">
+        <div class="traza-item"><b>En espera</b>Avance la conversación con los botones del chat.</div>
+      </div>
+    </div>
+  </div>
+  <p class="pie-equipo">El bot reconoce al cliente por su número, le aplica su nivel de precio y valida cupo antes de confirmar. Nunca promete lo que no hay. <a href="demo/whatsapp.html" target="_blank" rel="noopener"><b>Abrir esta pantalla completa &rarr;</b></a></p>
+</section>
+
+<!-- ---------------------------------------------------- SIMULADOR 3: ERP -->
+<section class="seccion" style="border-top:0">
+  <div class="cabeza">
+    <span class="folio">3.3</span>
+    <div>
+      <span class="rotulo">Simulador · lo que ve el dueño</span>
+      <h3 style="font-size:clamp(1.4rem,2.6vw,1.9rem);text-transform:none">Sistema interno: inventario, pedidos y plata</h3>
+    </div>
+  </div>
+
+  <div class="equipo">
+    <div class="equipo-barra">
+      <span class="punto"></span><span class="punto"></span><span class="punto"></span>
+      <span style="margin-left:6px">sistema interno · acceso privado</span>
+      <span style="margin-left:auto">viernes, 7:42 a.m.</span>
+    </div>
+    <div class="equipo-cuerpo">
+      <div class="erp-kpis">
+        <div class="erp-kpi"><div class="et">Ventas de hoy</div><div class="vl">$2.391.662</div><div class="sub">7 transacciones <span class="baja">▼ 15,8 %</span> vs ayer</div></div>
+        <div class="erp-kpi"><div class="et">Ventas 30 días</div><div class="vl">$102,2 M</div><div class="sub"><span class="sube">▲ 17,7 %</span> vs periodo anterior</div></div>
+        <div class="erp-kpi"><div class="et">Utilidad operacional</div><div class="vl">$5,6 M</div><div class="sub">Margen bruto 18,6 %</div></div>
+        <div class="erp-kpi"><div class="et">Inventario valorizado</div><div class="vl">$117,5 M</div><div class="sub">8 referencias bajo mínimo</div></div>
+        <div class="erp-kpi"><div class="et">Cartera</div><div class="vl">$51,0 M</div><div class="sub"><span class="baja">23 % vencida</span></div></div>
+      </div>
+
+      <div class="erp-grid">
+        <div class="panel">
+          <h5>Ventas de los últimos 30 días <em>ticket promedio $399.145</em></h5>
+          <div id="grafico"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+            <div>
+              <h5 style="font-size:.95rem">Por canal</h5>
+              <div id="canales"></div>
+            </div>
+            <div>
+              <h5 style="font-size:.95rem">Margen por categoría</h5>
+              <div id="categorias"></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="panel">
+            <h5>Pedidos programados <em>25 activos</em></h5>
+            <div class="dias">
+              <div class="dia"><div class="d">Hoy</div><div class="c">7</div><div class="m">$4,1 M · 4 a domicilio</div></div>
+              <div class="dia"><div class="d">Mañana</div><div class="c">6</div><div class="m">$5,1 M · 3 a domicilio</div></div>
+              <div class="dia"><div class="d">Domingo</div><div class="c">4</div><div class="m">$0,97 M · 2 a domicilio</div></div>
+              <div class="dia"><div class="d">Lunes</div><div class="c">4</div><div class="m">$11,9 M · 2 a domicilio</div></div>
+            </div>
+          </div>
+
+          <div class="panel" style="margin-top:14px">
+            <h5>Alertas de bodega <em>qué comprar hoy</em></h5>
+            <div class="fila-alerta"><span><span class="sem" style="background:#e06d5f"></span>Malla electrosoldada 6 mm</span><span class="num" style="color:var(--scr-txt-2)">agotada · pedir 30</span></div>
+            <div class="fila-alerta"><span><span class="sem" style="background:#f0b52a"></span>Pegante porcelanato 25 kg</span><span class="num" style="color:var(--scr-txt-2)">quedan 3 · pedir 21</span></div>
+            <div class="fila-alerta"><span><span class="sem" style="background:#f0b52a"></span>Cable THHN #12 · 100 m</span><span class="num" style="color:var(--scr-txt-2)">quedan 5 · pedir 11</span></div>
+            <div class="fila-alerta"><span><span class="sem" style="background:#54a9d6"></span>Teja fibrocemento 3,05 m</span><span class="num" style="color:var(--scr-txt-2)">quedan 12 · pedir 24</span></div>
+            <div style="margin-top:11px;font-family:var(--f-num);font-size:.75rem;color:var(--scr-txt-2)">
+              Inversión sugerida: <span style="color:var(--ambar)">$11.951.900</span> · calculada por consumo real de 30 días
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="pie-equipo">Cifras de una operación de ejemplo, calibradas contra la realidad de una ferretería de este tamaño. No corresponden a ningún negocio real. <a href="demo/admin.html" target="_blank" rel="noopener"><b>Abrir esta pantalla completa &rarr;</b></a></p>
+</section>
+
+<!-- =================================================== 04 QUÉ CAMBIA -->
+<section class="seccion" id="impacto">
+  <div class="cabeza">
+    <span class="folio">04</span>
+    <div>
+      <span class="rotulo">Impacto</span>
+      <h2>Qué cambia, en números</h2>
+    </div>
+  </div>
+
+  <div class="antes-despues">
+    <div class="ad">
+      <div class="q">Cotizar una obra completa</div>
+      <div class="a">40 minutos y una calculadora</div>
+      <div class="b">12 segundos</div>
+      <div class="n">Y queda guardada con número, vigencia y memoria de cálculo.</div>
+    </div>
+    <div class="ad">
+      <div class="q">Atención fuera de horario</div>
+      <div class="a">Nadie contesta</div>
+      <div class="b">24 / 7</div>
+      <div class="n">El turno donde hoy se pierden los pedidos del lunes.</div>
+    </div>
+    <div class="ad">
+      <div class="q">Alistar los pedidos del día</div>
+      <div class="a">Pedido por pedido</div>
+      <div class="b">Una sola lista</div>
+      <div class="n">Consolidada por producto. Bodega recorre la estantería una vez.</div>
+    </div>
+    <div class="ad">
+      <div class="q">Descuento sobre cemento</div>
+      <div class="a">El que decida el asesor</div>
+      <div class="b">Tope 5 %</div>
+      <div class="n">Tope por categoría. El sistema no deja vender por debajo del margen.</div>
+    </div>
+    <div class="ad">
+      <div class="q">Saber qué comprar</div>
+      <div class="a">Por memoria</div>
+      <div class="b">Por consumo real</div>
+      <div class="n">Días de cobertura y clasificación ABC de las 82 referencias.</div>
+    </div>
+    <div class="ad">
+      <div class="q">Revisar el negocio</div>
+      <div class="a">Estando en el local</div>
+      <div class="b">Desde el celular</div>
+      <div class="n">Caja, cartera, inventario y utilidad, al día.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================= 05 ENTREGABLES -->
+<section class="seccion" id="entregables">
+  <div class="cabeza">
+    <span class="folio">05</span>
+    <div>
+      <span class="rotulo">Entregables</span>
+      <h2>Qué se entrega exactamente</h2>
+    </div>
+  </div>
+
+  <div class="tabla-env">
+    <table class="doc">
+      <thead><tr><th>Componente</th><th>Qué incluye</th><th class="n">Etapa</th></tr></thead>
+      <tbody>
+        <tr><td><b>Motor de inventario</b></td><td>Catálogo con costo, precio, mínimos y máximos. Kardex de cada movimiento, ajustes por conteo físico, recepción de mercancía y valorización.</td><td class="n">1</td></tr>
+        <tr><td><b>Gestión de pedidos</b></td><td>Pedidos desde cualquier canal, estados de despacho, agenda de los próximos días, lista de alistamiento consolidada y seguimiento para el cliente.</td><td class="n">1</td></tr>
+        <tr><td><b>Módulo financiero</b></td><td>Cierre de caja diario, estado de resultados comparado, flujo de caja proyectado a 30 días, cartera con edades y margen por categoría y producto.</td><td class="n">1</td></tr>
+        <tr><td><b>Catálogo web público</b></td><td>Vitrina con precios y existencias en vivo, buscador tolerante a errores de digitación y sinónimos de obra.</td><td class="n">1</td></tr>
+        <tr><td><b>Bot de WhatsApp</b></td><td>Línea oficial de WhatsApp Business, toma de pedidos conversacional, consulta de precio, stock, cartera y estado de despacho, escalamiento a asesor.</td><td class="n">1</td></tr>
+        <tr><td><b>Portal de clientes fijos</b></td><td>Acceso privado, lista de precios por nivel, pedido rápido desde habituales, cotizador en tiempo real, cupo y cartera.</td><td class="n">2</td></tr>
+        <tr><td><b>Niveles y topes de precio</b></td><td>Cuatro niveles de cliente y tope de descuento por categoría, aplicados automáticamente en los cinco canales.</td><td class="n">2</td></tr>
+        <tr><td><b>Simulador de materiales</b></td><td>Diez tipos de obra con memoria de cálculo, estimado de mano de obra, advertencias técnicas y cotización con número.</td><td class="n">3</td></tr>
+        <tr><td><b>Asistente de IA</b></td><td>Motor de recomendación con ocho familias de reglas, base de conocimiento técnico y de políticas, e integración opcional con modelo de lenguaje.</td><td class="n">3</td></tr>
+        <tr><td><b>Puesta en marcha</b></td><td>Migración del inventario desde Excel, carga de clientes y niveles, capacitación al equipo y manual de operación.</td><td class="n">1–3</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="nota col" style="max-width:none">
+    La migración del inventario base es un <b>bono incluido</b>: se recibe el archivo actual en el formato que esté y el equipo lo normaliza, clasifica por categoría y carga con sus mínimos y máximos.
+  </div>
+</section>
+
+<!-- ======================================================= 06 CRONOGRAMA -->
+<section class="seccion" id="cronograma">
+  <div class="cabeza">
+    <span class="folio">06</span>
+    <div>
+      <span class="rotulo">Cronograma</span>
+      <h2>Siete semanas, con algo funcionando desde la tercera</h2>
+    </div>
+  </div>
+
+  <p class="entrada col">Cada etapa entrega algo que ya se puede usar. No hay que esperar al final para ver resultados, y todas van dentro del mismo valor.</p>
+
+  <div class="fases">
+    <div class="fase">
+      <span class="sem">SEM 1–2</span>
+      <div>
+        <h4>Inventario y datos</h4>
+        <p>Migración del Excel, normalización del catálogo, carga de clientes, niveles de precio y topes por categoría. Al final de esta fase el inventario ya está vivo.</p>
+      </div>
+    </div>
+    <div class="fase">
+      <span class="sem">SEM 3–4</span>
+      <div>
+        <h4>Sistema interno y catálogo web</h4>
+        <p>Pedidos, despachos, cierre de caja, finanzas y vitrina pública con precios y existencias. Capacitación al equipo del local.</p>
+      </div>
+    </div>
+    <div class="fase">
+      <span class="sem">SEM 4–5</span>
+      <div>
+        <h4>Bot de WhatsApp</h4>
+        <p>Registro de la línea oficial ante Meta, conexión del webhook y pruebas con clientes reales seleccionados. Arranca respondiendo consultas y luego tomando pedidos.</p>
+      </div>
+    </div>
+    <div class="fase">
+      <span class="sem">SEM 5–6</span>
+      <div>
+        <h4>Portal de clientes fijos</h4>
+        <p>Accesos, listas de precio por nivel, cotizador en tiempo real y activación acompañada de los primeros clientes.</p>
+      </div>
+    </div>
+    <div class="fase">
+      <span class="sem">SEM 6–7</span>
+      <div>
+        <h4>Simulador de obra y asistente de IA</h4>
+        <p>Los diez tipos de obra, la base de conocimiento técnico y el motor de recomendación en los canales web y WhatsApp.</p>
+      </div>
+    </div>
+    <div class="fase">
+      <span class="sem">SEM 7</span>
+      <div>
+        <h4>Ajuste y entrega</h4>
+        <p>Afinamiento con datos reales de las primeras semanas, manual de operación y entrega formal con acompañamiento.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== 07 INVERSIÓN -->
+<section class="seccion" id="inversion">
+  <div class="cabeza">
+    <span class="folio">07</span>
+    <div>
+      <span class="rotulo">Inversión</span>
+      <h2>Transparencia total</h2>
+    </div>
+  </div>
+
+  <p class="entrada col">Un solo valor por toda la plataforma y una sola mensualidad. Sin módulos cobrados aparte, sin sorpresas a mitad del proyecto y sin cobros por conversación del bot.</p>
+
+  <div class="precios">
+    <div class="precio destacado">
+      <span class="tipo">Proyecto completo · pago único</span>
+      <h4>Plataforma llave en mano</h4>
+      <div class="cifra">$9.000.000</div>
+      <div class="cond">50 % al inicio · 50 % contra entrega · 7 semanas</div>
+      <ul>
+        <li>Los cinco módulos completos, sin valores por separado</li>
+        <li>Motor de inventario con kardex, gestión de pedidos y despachos</li>
+        <li>Módulo financiero: caja, estado de resultados, flujo y cartera</li>
+        <li>Catálogo web público y portal privado de clientes fijos</li>
+        <li>Bot de WhatsApp que toma pedidos y valida cupo</li>
+        <li>Simulador de obra de diez tipos y asistente de inteligencia artificial</li>
+        <li>Servidor, dominio y certificado SSL del primer año incluidos</li>
+        <li>Migración del inventario desde Excel y capacitación del equipo</li>
+      </ul>
+    </div>
+
+    <div class="precio">
+      <span class="tipo">Sostenimiento · mensual</span>
+      <h4>Soporte y operación</h4>
+      <div class="cifra">$1.000.000<span style="font-size:.95rem;color:var(--tinta-3)"> /mes</span></div>
+      <div class="cond">Arranca al mes siguiente de la entrega</div>
+      <ul>
+        <li>Soporte técnico prioritario para todo el equipo del local</li>
+        <li>Monitoreo, copias de seguridad diarias y garantía de funcionamiento</li>
+        <li>Consumo de la inteligencia artificial incluido, sin cobro por conversación</li>
+        <li>Actualizaciones de mantenimiento y ajustes de catálogo y precios</li>
+        <li>Acompañamiento a los clientes fijos que se van sumando al portal</li>
+        <li>Operación de la línea de WhatsApp y del servidor</li>
+      </ul>
+      <div class="nota">Cubre la operación de la plataforma entregada. Módulos nuevos o rediseños posteriores se cotizan por separado.</div>
+    </div>
+  </div>
+
+  <div class="nota col" style="max-width:none">
+    Desde el segundo año la renovación de servidor y dominio se liquida al valor de mercado vigente, como pago anual independiente del sostenimiento. El primer año va incluido en el valor del proyecto.
+  </div>
+</section>
+
+<!-- ========================================================== 08 CIERRE -->
+<section class="seccion" style="border-top:0;padding-bottom:20px">
+  <div class="cierre">
+    <span class="rotulo" style="color:var(--ambar)">Siguiente paso</span>
+    <h2 style="margin-bottom:12px">Empecemos por el inventario</h2>
+    <p style="max-width:58ch;font-size:1.1rem">Con el archivo de inventario actual se puede tener el sistema cargado y funcionando en dos semanas. Lo demás se construye encima, sin volver a empezar.</p>
+
+    <div class="pasos">
+      <div class="paso"><span class="p">PASO 1</span><b>Aprobar la propuesta</b><span>Se firma el acuerdo y arranca el cronograma.</span></div>
+      <div class="paso"><span class="p">PASO 2</span><b>Entregar el inventario</b><span>El Excel como esté. Nosotros lo normalizamos.</span></div>
+      <div class="paso"><span class="p">PASO 3</span><b>Semana 3</b><span>El sistema interno ya está en uso en el local.</span></div>
+      <div class="paso"><span class="p">PASO 4</span><b>Semana 7</b><span>Plataforma completa entregada y el equipo capacitado.</span></div>
+    </div>
+
+    <div class="acciones">
+      <a class="btn" href="#simuladores">Volver a los simuladores</a>
+      <a class="btn hueco" href="#inversion">Revisar la inversión</a>
+    </div>
+  </div>
+</section>
+
+<footer class="firma">
+  <span><b>Soluciones Tecnológicas DNV</b> · Desarrollo de software a medida</span>
+  <span>Propuesta Ferretería · documento confidencial</span>
+</footer>
+
+</main>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ---------------------------------------------------------- catálogo --- */
+  var CAT = {
+    'CEM-GRIS-50':{n:'Cemento gris uso general 50 kg',u:'bulto',p:32500,c:'cemento'},
+    'ARE-LAV-M3' :{n:'Arena lavada de peña',u:'m³',p:95000,c:'cemento'},
+    'ARE-RIO-M3' :{n:'Arena de río',u:'m³',p:88000,c:'cemento'},
+    'TRI-34-M3'  :{n:'Triturado 3/4"',u:'m³',p:115000,c:'cemento'},
+    'LAD-TOL-MAC':{n:'Ladrillo tolete macizo 6x12x24',u:'und',p:1250,c:'mamposteria'},
+    'LAD-E4'     :{n:'Ladrillo estructural No.4',u:'und',p:2150,c:'mamposteria'},
+    'BLO-CON-15' :{n:'Bloque de concreto 15x20x40',u:'und',p:3200,c:'mamposteria'},
+    'MAL-ELE-60' :{n:'Malla electrosoldada 6 mm 2,35x6 m',u:'und',p:118000,c:'acero'},
+    'ALA-NEG-KG' :{n:'Alambre negro calibre 18',u:'kg',p:8900,c:'acero'},
+    'CER-PIS-45' :{n:'Cerámica piso 45x45 · caja 1,50 m²',u:'caja',p:48000,c:'ceramica'},
+    'POR-60'     :{n:'Porcelanato 60x60 · caja 1,44 m²',u:'caja',p:92000,c:'ceramica'},
+    'PEG-CER-25' :{n:'Pegante para cerámica 25 kg',u:'bulto',p:26500,c:'adhesivos'},
+    'PEG-POR-25' :{n:'Pegante porcelanato 25 kg',u:'bulto',p:39000,c:'adhesivos'},
+    'BOQ-2'      :{n:'Boquilla para juntas 2 kg',u:'und',p:9800,c:'adhesivos'},
+    'PIN-V1-GL'  :{n:'Vinilo tipo 1 lavable · galón',u:'galón',p:68000,c:'pinturas'},
+    'PIN-V1-CU'  :{n:'Vinilo tipo 1 lavable · cuñete 5 gl',u:'cuñete',p:295000,c:'pinturas'},
+    'EST-LIS-25' :{n:'Estuco plástico listo 25 kg',u:'bulto',p:29500,c:'pinturas'},
+    'IMP-SEL-GL' :{n:'Sellador imprimante · galón',u:'galón',p:52000,c:'pinturas'},
+    'DRY-LAM-ST' :{n:'Lámina drywall 1/2" 1,22x2,44',u:'und',p:41000,c:'drywall'},
+    'DRY-PAR-89' :{n:'Paral calibre 26 · 89 mm x 2,44',u:'und',p:12500,c:'drywall'},
+    'DRY-CAN-89' :{n:'Canal calibre 26 · 89 mm x 2,44',u:'und',p:11800,c:'drywall'},
+    'DRY-TOR-1K' :{n:'Tornillo drywall 1" · caja x 1.000',u:'caja',p:28000,c:'drywall'},
+    'DRY-MAS-28' :{n:'Masilla lista drywall 28 kg',u:'und',p:68000,c:'drywall'},
+    'DRY-CIN-90' :{n:'Cinta de papel para juntas 90 m',u:'rollo',p:9500,c:'drywall'}
+  };
+
+  /* Tope de descuento por categoría: el corazón de la regla comercial. */
+  var TOPE = {cemento:.05,acero:.05,mamposteria:.07,ceramica:.10,drywall:.10,adhesivos:.12,pinturas:.14};
+
+  var COP = function(v){ return '$' + Math.round(v||0).toLocaleString('es-CO'); };
+  var techo = function(v){ return Math.ceil(v - 1e-9); };
+  var dec = function(v,d){ return Number(v).toLocaleString('es-CO',{maximumFractionDigits:d===undefined?2:d}); };
+
+  /* --------------------------------------------------------- obras ------ */
+  var CONCRETO = {'2500':{cem:6.5,are:.56,tri:.58,t:'2.500 psi'},'3000':{cem:7.5,are:.52,tri:.58,t:'3.000 psi'},'4000':{cem:9,are:.48,tri:.56,t:'4.000 psi'}};
+  var PIEZAS = {
+    'LAD-TOL-MAC':{porM2:52,mort:.021,t:'Ladrillo tolete'},
+    'LAD-E4':{porM2:12.5,mort:.012,t:'Ladrillo estructural No.4'},
+    'BLO-CON-15':{porM2:11.5,mort:.013,t:'Bloque de concreto 15'}
+  };
+  var FORMATOS = {'CER-PIS-45':{m2:1.5,kg:5,peg:'PEG-CER-25',t:'Cerámica 45x45'},'POR-60':{m2:1.44,kg:6.5,peg:'PEG-POR-25',t:'Porcelanato 60x60'}};
+
+  var OBRAS = {
+    muro:{
+      titulo:'Muro',
+      campos:[
+        {id:'largo',et:'Largo del muro',u:'m',def:6},
+        {id:'alto',et:'Altura',u:'m',def:2.5},
+        {id:'vanos',et:'Puertas y ventanas',u:'m²',def:0},
+        {id:'pieza',et:'Tipo de pieza',op:[['LAD-TOL-MAC','Ladrillo tolete macizo'],['LAD-E4','Ladrillo estructural No.4'],['BLO-CON-15','Bloque de concreto 15']],def:'LAD-TOL-MAC'},
+        {id:'panete',et:'Pañete',op:[['2','Dos caras'],['1','Una cara'],['0','Sin pañete']],def:'2'}
+      ],
+      calc:function(e){
+        var area = Math.max(0, e.largo*e.alto - e.vanos);
+        var sp = PIEZAS[e.pieza] || PIEZAS['LAD-TOL-MAC'];
+        var piezas = area*sp.porM2*1.05;
+        var mPega = area*sp.mort*1.05;
+        var caras = Number(e.panete);
+        var mPanete = area*caras*0.02*1.1;
+        var mort = mPega + mPanete;
+        return {
+          magnitud: dec(area)+' m² netos · '+dec(mort,3)+' m³ de mortero',
+          items:[
+            [e.pieza, piezas],
+            ['CEM-GRIS-50', mort*7.5],
+            ['ARE-RIO-M3', mort*1.05]
+          ],
+          memoria:[
+            'Área neta = ('+dec(e.largo)+' × '+dec(e.alto)+') − '+dec(e.vanos)+' m² = '+dec(area)+' m²',
+            'Piezas = '+dec(area)+' m² × '+sp.porM2+' und/m² × 1,05 desperdicio = '+techo(piezas)+' und',
+            'Mortero de pega = '+dec(area)+' × '+sp.mort+' m³/m² = '+dec(mPega,3)+' m³',
+            caras ? 'Pañete '+caras+' cara(s) = '+dec(area*caras)+' m² × 0,02 m + 10 % = '+dec(mPanete,3)+' m³'
+                  : 'Sin pañete',
+            'Cemento = '+dec(mort,3)+' m³ × 7,5 bultos/m³ = '+techo(mort*7.5)+' bultos'
+          ],
+          consejo: e.alto > 3
+            ? '<b>Nota técnica.</b> Un muro de más de 3 m exige columneta de confinamiento cada 3,5 m según NSR-10. El asistente lo advierte antes de cotizar, no después de levantarlo.'
+            : '<b>Nota técnica.</b> Humedezca la pieza antes de pegar: si absorbe el agua del mortero, la junta pierde resistencia. Son advertencias que el bot da solo.'
+        };
+      }
+    },
+
+    placa:{
+      titulo:'Placa',
+      campos:[
+        {id:'largo',et:'Largo',u:'m',def:5},
+        {id:'ancho',et:'Ancho',u:'m',def:4},
+        {id:'espesor',et:'Espesor',u:'cm',def:10},
+        {id:'resistencia',et:'Resistencia',op:[['2500','2.500 psi'],['3000','3.000 psi'],['4000','4.000 psi']],def:'3000'},
+        {id:'malla',et:'Refuerzo',op:[['1','Con malla electrosoldada'],['0','Sin malla']],def:'1'}
+      ],
+      calc:function(e){
+        var d = CONCRETO[e.resistencia] || CONCRETO['3000'];
+        var area = e.largo*e.ancho;
+        var vol = area*(e.espesor/100)*1.07;
+        var items = [['CEM-GRIS-50',vol*d.cem],['ARE-LAV-M3',vol*d.are],['TRI-34-M3',vol*d.tri]];
+        var mallas = 0;
+        if (e.malla === '1'){ mallas = area/13; items.push(['MAL-ELE-60',mallas]); items.push(['ALA-NEG-KG',area*0.05]); }
+        return {
+          magnitud: dec(area)+' m² · '+dec(vol)+' m³ de concreto '+d.t,
+          items: items,
+          memoria:[
+            'Volumen = '+dec(e.largo)+' × '+dec(e.ancho)+' × '+dec(e.espesor,0)+' cm = '+dec(area*e.espesor/100,3)+' m³',
+            'Con 7 % de desperdicio = '+dec(vol)+' m³',
+            'Dosificación '+d.t+' = '+dec(d.cem,1)+' bultos + '+d.are+' m³ arena + '+d.tri+' m³ triturado por m³',
+            e.malla === '1' ? 'Malla = '+dec(area)+' m² ÷ 13 m² útiles por lámina = '+techo(mallas)+' und' : 'Sin refuerzo de malla',
+            'Agua aproximada = '+dec(vol*180,0)+' litros'
+          ],
+          consejo: area > 25
+            ? '<b>Nota técnica.</b> Sobre 25 m² deje juntas de dilatación cada 4 o 5 m, y cure con agua 7 días. El 90 % de las fisuras en placas nuevas son por falta de curado, no por mala mezcla.'
+            : '<b>Nota técnica.</b> Cure la placa con agua durante 7 días seguidos. Es gratis y es lo que evita las fisuras que después toca resanar.'
+        };
+      }
+    },
+
+    enchape:{
+      titulo:'Enchape',
+      campos:[
+        {id:'largo',et:'Largo del área',u:'m',def:4},
+        {id:'ancho',et:'Ancho del área',u:'m',def:3},
+        {id:'formato',et:'Formato',op:[['CER-PIS-45','Cerámica 45x45'],['POR-60','Porcelanato 60x60']],def:'CER-PIS-45'},
+        {id:'desperdicio',et:'Desperdicio por cortes',u:'%',def:10}
+      ],
+      calc:function(e){
+        var f = FORMATOS[e.formato] || FORMATOS['CER-PIS-45'];
+        var area = e.largo*e.ancho;
+        var compra = area*(1 + e.desperdicio/100);
+        var cajas = compra/f.m2;
+        var peg = area*f.kg/25;
+        var boq = area*0.35/2;
+        return {
+          magnitud: dec(area)+' m² útiles · '+dec(compra)+' m² a comprar',
+          items:[[e.formato,cajas],[f.peg,peg],['BOQ-2',boq]],
+          memoria:[
+            'Área = '+dec(e.largo)+' × '+dec(e.ancho)+' = '+dec(area)+' m²',
+            'Con '+dec(e.desperdicio,0)+' % por cortes = '+dec(compra)+' m²',
+            'Cajas = '+dec(compra)+' ÷ '+f.m2+' m² por caja = '+techo(cajas)+' cajas',
+            'Pegante = '+dec(area)+' m² × '+f.kg+' kg/m² ÷ 25 kg = '+techo(peg)+' bultos',
+            'Boquilla = '+dec(area)+' m² × 0,35 kg/m² ÷ 2 kg = '+techo(boq)+' unidades'
+          ],
+          consejo: e.formato === 'POR-60'
+            ? '<b>Nota técnica.</b> El porcelanato casi no absorbe agua: con pegacor común se despega entre 6 y 12 meses después. El sistema cambia el pegante automáticamente al elegir el formato.'
+            : '<b>Nota técnica.</b> Compre todas las cajas del mismo lote. Entre lotes distintos hay diferencia de tono que se nota con la luz de la tarde, cuando ya está instalado.'
+        };
+      }
+    },
+
+    pintura:{
+      titulo:'Pintura',
+      campos:[
+        {id:'largo',et:'Largo del espacio',u:'m',def:5},
+        {id:'ancho',et:'Ancho del espacio',u:'m',def:4},
+        {id:'alto',et:'Altura libre',u:'m',def:2.4},
+        {id:'manos',et:'Manos de pintura',u:'manos',def:2},
+        {id:'estuco',et:'Preparación',op:[['1','Con estuco y sellador'],['0','Solo pintura']],def:'1'}
+      ],
+      calc:function(e){
+        var muros = Math.max(0, 2*(e.largo + e.ancho)*e.alto - 3.5);
+        var techoA = e.largo*e.ancho;
+        var area = muros + techoA;
+        var gal = area*e.manos/38;
+        var items = [];
+        if (gal >= 5){
+          var cu = Math.floor(gal/5), sueltos = gal - cu*5;
+          items.push(['PIN-V1-CU', cu]);
+          if (sueltos > 0.1) items.push(['PIN-V1-GL', sueltos]);
+        } else {
+          items.push(['PIN-V1-GL', gal]);
+        }
+        if (e.estuco === '1'){ items.push(['EST-LIS-25', area/12]); items.push(['IMP-SEL-GL', area/40]); }
+        return {
+          magnitud: dec(area)+' m² totales · '+dec(gal)+' galones',
+          items: items,
+          memoria:[
+            'Muros = 2 × ('+dec(e.largo)+' + '+dec(e.ancho)+') × '+dec(e.alto)+' − 3,5 m² de vanos = '+dec(muros)+' m²',
+            'Techo = '+dec(e.largo)+' × '+dec(e.ancho)+' = '+dec(techoA)+' m²',
+            'Pintura = '+dec(area)+' m² × '+dec(e.manos,0)+' manos ÷ 38 m² por galón = '+dec(gal)+' galones',
+            e.estuco === '1' ? 'Estuco = '+dec(area)+' ÷ 12 m² por bulto = '+techo(area/12)+' bultos · Sellador = '+techo(area/40)+' galones' : 'Sin preparación de superficie'
+          ],
+          consejo: gal >= 5
+            ? '<b>Ahorro detectado.</b> Por encima de 5 galones conviene el cuñete: es el mismo producto y la misma cantidad, en otra presentación. El asistente hace este cambio solo y muestra cuánto se ahorra.'
+            : '<b>Nota técnica.</b> Sobre estuco nuevo el sellador no es opcional: sin él la pintura se absorbe y pide una mano extra, que cuesta más que el sellador.'
+        };
+      }
+    },
+
+    drywall:{
+      titulo:'Drywall',
+      campos:[
+        {id:'largo',et:'Largo del muro',u:'m',def:8},
+        {id:'alto',et:'Altura',u:'m',def:2.44},
+        {id:'caras',et:'Forro',op:[['2','Dos caras'],['1','Una cara']],def:'2'}
+      ],
+      calc:function(e){
+        var caras = Number(e.caras);
+        var area = e.largo*e.alto;
+        var areaLam = area*caras*1.1;
+        var lam = areaLam/2.98;
+        var par = e.largo/0.61 + 1;
+        var can = 2*e.largo/2.44;
+        return {
+          magnitud: dec(area)+' m² × '+caras+' cara(s) · '+techo(lam)+' láminas',
+          items:[
+            ['DRY-LAM-ST',lam],['DRY-PAR-89',par],['DRY-CAN-89',can],
+            ['DRY-TOR-1K',area*caras*25/1000],['DRY-MAS-28',area*caras*0.6/28],['DRY-CIN-90',area*caras*2.2/90]
+          ],
+          memoria:[
+            'Área = '+dec(e.largo)+' × '+dec(e.alto)+' = '+dec(area)+' m² por cara',
+            'Láminas = '+dec(area)+' × '+caras+' × 1,10 ÷ 2,98 m² = '+techo(lam)+' und',
+            'Parales = '+dec(e.largo)+' m ÷ 0,61 m + 1 = '+techo(par)+' und',
+            'Tornillos = '+dec(area*caras)+' m² × 25 = '+techo(area*caras*25)+' und',
+            'Masilla = '+dec(area*caras)+' m² × 0,6 kg/m² ÷ 28 kg = '+techo(area*caras*0.6/28)+' und'
+          ],
+          consejo:'<b>Nota técnica.</b> En baños y cocinas cambie a lámina RH: la estándar se pandea con la humedad y después toca tumbar el muro completo. Las juntas piden tres manos de masilla con lijado intermedio.'
+        };
+      }
+    }
+  };
+
+  /* --------------------------------------------------------- render ----- */
+  var actual = 'placa';
+  var elObras = document.getElementById('obras');
+  var elCampos = document.getElementById('campos');
+
+  Object.keys(OBRAS).forEach(function(k){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'obra-btn';
+    b.textContent = OBRAS[k].titulo;
+    b.setAttribute('aria-pressed', k === actual ? 'true' : 'false');
+    b.addEventListener('click', function(){
+      actual = k;
+      Array.prototype.forEach.call(elObras.children, function(x){ x.setAttribute('aria-pressed','false'); });
+      b.setAttribute('aria-pressed','true');
+      pintarCampos();
+      calcular();
+    });
+    elObras.appendChild(b);
+  });
+
+  function pintarCampos(){
+    var o = OBRAS[actual];
+    elCampos.innerHTML = '';
+    o.campos.forEach(function(c){
+      var w = document.createElement('div');
+      w.className = 'campo';
+      var id = 'f_' + actual + '_' + c.id;
+      var lab = '<label for="'+id+'">'+c.et+(c.u ? ' <span style="opacity:.6">('+c.u+')</span>' : '')+'</label>';
+      if (c.op){
+        w.innerHTML = lab + '<select id="'+id+'" data-k="'+c.id+'">' +
+          c.op.map(function(p){ return '<option value="'+p[0]+'"'+(p[0]===c.def?' selected':'')+'>'+p[1]+'</option>'; }).join('') +
+          '</select>';
+      } else {
+        w.innerHTML = lab + '<input id="'+id+'" data-k="'+c.id+'" type="number" step="0.01" min="0" value="'+c.def+'">';
+      }
+      elCampos.appendChild(w);
+    });
+    elCampos.querySelectorAll('[data-k]').forEach(function(el){
+      el.addEventListener('input', calcular);
+      el.addEventListener('change', calcular);
+    });
+  }
+
+  function leer(){
+    var e = {};
+    elCampos.querySelectorAll('[data-k]').forEach(function(el){
+      var v = el.value;
+      e[el.dataset.k] = el.tagName === 'SELECT' ? v : (parseFloat(String(v).replace(',','.')) || 0);
+    });
+    return e;
+  }
+
+  function calcular(){
+    var o = OBRAS[actual];
+    var r = o.calc(leer());
+    var nivel = parseFloat(document.getElementById('nivel').value) || 0;
+    var filas = '', total = 0;
+
+    r.items.forEach(function(it){
+      var sku = it[0], cant = techo(it[1]);
+      if (!cant) return;
+      var p = CAT[sku];
+      if (!p) return;
+      var desc = Math.min(nivel, TOPE[p.c] === undefined ? nivel : TOPE[p.c]);
+      var unit = Math.round(p.p*(1 - desc));
+      var sub = unit*cant;
+      total += sub;
+      filas += '<tr><td>'+p.n+'<span class="sku">'+sku +
+        (desc > 0 ? ' · −'+Math.round(desc*100)+' %' + (desc < nivel ? ' (tope de categoría)' : '') : '') +
+        '</span></td>' +
+        '<td class="num">'+dec(cant)+' <span style="color:var(--scr-txt-2);font-size:.76rem">'+p.u+'</span></td>' +
+        '<td class="num">'+COP(unit)+'</td><td class="num">'+COP(sub)+'</td></tr>';
+    });
+
+    document.getElementById('filas').innerHTML = filas;
+    document.getElementById('total').textContent = COP(total);
+    document.getElementById('magnitud').textContent = r.magnitud;
+    document.getElementById('memoria').innerHTML = r.memoria.map(function(m){ return '<div>'+m+'</div>'; }).join('');
+    document.getElementById('consejo').innerHTML = r.consejo;
+  }
+
+  pintarCampos();
+  calcular();
+  document.getElementById('nivel').addEventListener('change', calcular);
+
+  /* -------------------------------------------------------- whatsapp ---- */
+  var GUION = [
+    {
+      chip:'Buenas noches',
+      yo:'Buenas noches',
+      bot:['Buenas noches don Julián, bienvenido de nuevo.\n\nTiene 1 pedido en curso: el PD-00561 está *alistando* para mañana.\n\nCartera al día de hoy: *$4.120.000* de un cupo de $12.000.000.\n\nDígame qué necesita.'],
+      traza:[['hito','Cliente reconocido por su número','Drywall &amp; Acabados JM · nivel mayorista, 12 % de descuento.'],
+             ['','Contexto cargado','Pedidos en curso, cartera y cupo disponible consultados en vivo.']]
+    },
+    {
+      chip:'Necesito 30 láminas de drywall y 2 cajas de tornillo',
+      yo:'Necesito 30 láminas de drywall y 2 cajas de tornillo',
+      bot:['*Su pedido va así:*\n• 30 und Lámina drywall 1/2" 1,22x2,44 — $1.082.400\n• 2 caja Tornillo drywall 1" x 1.000 — $49.280\n\nSubtotal lista: $1.286.000\nDescuento Mayorista (10 %): −$154.320\n*Total: $1.131.680* (IVA incluido)\nDomicilio sin costo por el monto del pedido.',
+            '*Sugerencia:* le falta masilla.\n\nLleva 30 láminas y va a necesitar unas 3 unidades de masilla de 28 kg para las juntas. Sin eso la obra se detiene a mitad de jornada.'],
+      traza:[['','Mensaje interpretado','Intención: pedido · 2 productos identificados con cantidad y unidad.'],
+             ['','Precio aplicado','Nivel mayorista 12 %, topado al 10 % por ser categoría drywall.'],
+             ['ok','Existencias validadas','96 láminas y 40 cajas en bodega. Alcanza.'],
+             ['','Recomendación generada','Complemento faltante detectado por reglas de obra, no por publicidad.']]
+    },
+    {
+      chip:'El lunes',
+      yo:'El lunes',
+      bot:['Perfecto, lo programo para *el lunes*.\n\n*Su pedido va así:*\n• 30 und Lámina drywall 1/2" 1,22x2,44 — $1.082.400\n• 2 caja Tornillo drywall 1" x 1.000 — $49.280\n\n*Total: $1.131.680* (IVA incluido)\n\n¿Confirmo el pedido?'],
+      traza:[['','Fecha resuelta','«El lunes» interpretado como fecha de entrega concreta.'],
+             ['','Cupo verificado','$1.131.680 contra $7.880.000 disponibles. Aprobado a crédito, 21 días.']]
+    },
+    {
+      chip:'Sí, confirmo',
+      yo:'Sí, confirmo',
+      bot:['*Pedido PD-00590 confirmado.*\n\nEntrega: el lunes\nTotal: $1.131.680 (crédito)\n2 líneas · domicilio\n\nYa quedó cargado en el sistema y bodega lo empieza a alistar. Le aviso por aquí cuando salga el despacho.'],
+      traza:[['hito','Pedido PD-00590 creado','Canal WhatsApp · creado por el bot · sin intervención humana.'],
+             ['ok','Inventario descontado','Quedan 66 láminas y 38 cajas. Nadie más puede vender lo mismo.'],
+             ['ok','Agenda actualizada','Aparece en la lista de alistamiento del lunes, consolidado con los demás pedidos.'],
+             ['','Cartera actualizada','Saldo del cliente: $5.251.680. Cupo disponible: $6.748.320.']]
+    }
+  ];
+
+  var paso = 0;
+  var chat = document.getElementById('wa-chat');
+  var chips = document.getElementById('wa-chips');
+  var traza = document.getElementById('wa-traza');
+  var ocupado = false;
+
+  function hora(){
+    var d = new Date();
+    return (d.getHours()%12||12) + ':' + String(d.getMinutes()).padStart(2,'0') + ' p. m.';
+  }
+  function fmt(t){
+    return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/\*([^*]+)\*/g,'<b>$1</b>');
+  }
+  function burbuja(txt, dir){
+    var d = document.createElement('div');
+    d.className = 'wa-msg ' + (dir === 'out' ? 'wa-out-m' : 'wa-in-m');
+    d.innerHTML = fmt(txt) + '<span class="wa-hora">' + hora() + '</span>';
+    chat.appendChild(d);
+    chat.scrollTop = chat.scrollHeight;
+  }
+  function pintarChips(){
+    chips.innerHTML = '';
+    if (paso >= GUION.length){
+      var r = document.createElement('button');
+      r.type = 'button'; r.className = 'wa-chip';
+      r.textContent = '↺ Volver a empezar';
+      r.addEventListener('click', reiniciar);
+      chips.appendChild(r);
+      return;
+    }
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'wa-chip';
+    b.textContent = GUION[paso].chip;
+    b.addEventListener('click', avanzar);
+    chips.appendChild(b);
+  }
+  function avanzar(){
+    if (ocupado || paso >= GUION.length) return;
+    ocupado = true;
+    var g = GUION[paso];
+    burbuja(g.yo, 'out');
+    chips.innerHTML = '';
+    document.getElementById('wa-estado').textContent = 'escribiendo…';
+
+    var i = 0;
+    (function siguiente(){
+      if (i >= g.bot.length){
+        document.getElementById('wa-estado').textContent = 'en línea';
+        if (paso === 0) traza.innerHTML = '';
+        g.traza.forEach(function(t, k){
+          setTimeout(function(){
+            var d = document.createElement('div');
+            d.className = 'traza-item' + (t[0] ? ' ' + t[0] : '');
+            d.innerHTML = '<b>' + t[1] + '</b>' + t[2];
+            traza.appendChild(d);
+          }, k*160);
+        });
+        paso++;
+        ocupado = false;
+        pintarChips();
+        return;
+      }
+      setTimeout(function(){ burbuja(g.bot[i], 'in'); i++; siguiente(); }, 620);
+    })();
+  }
+  function reiniciar(){
+    paso = 0;
+    chat.innerHTML = '';
+    traza.innerHTML = '<div class="traza-item"><b>En espera</b>Avance la conversación con los botones del chat.</div>';
+    pintarChips();
+  }
+  pintarChips();
+
+  /* ------------------------------------------------------ gráficas ERP -- */
+  var VENTAS = [2.9,3.4,1.2,3.8,4.1,3.2,3.9,2.4,4.6,3.1,0.9,3.7,4.2,3.5,2.8,4.4,3.3,1.1,3.9,4.8,3.6,3.1,4.0,2.7,0.8,3.4,4.5,3.8,4.2,2.4];
+  var ETQ = ['20 ago','25 ago','30 ago','4 sep','9 sep','14 sep'];
+
+  (function grafico(){
+    var w = 640, h = 168, pl = 6, pb = 20, pt = 8;
+    var max = Math.max.apply(null, VENTAS)*1.14;
+    var px = function(i){ return pl + i*(w - pl*2)/(VENTAS.length - 1); };
+    var py = function(v){ return h - pb - (v/max)*(h - pb - pt); };
+    var linea = VENTAS.map(function(v,i){ return (i?'L':'M') + px(i).toFixed(1) + ',' + py(v).toFixed(1); }).join(' ');
+    var area = linea + ' L' + px(VENTAS.length-1).toFixed(1) + ',' + (h-pb) + ' L' + px(0).toFixed(1) + ',' + (h-pb) + ' Z';
+    var rejilla = [0.25,0.5,0.75].map(function(f){
+      return '<line x1="'+pl+'" x2="'+(w-pl)+'" y1="'+py(max*f).toFixed(1)+'" y2="'+py(max*f).toFixed(1)+'" stroke="#26323f" stroke-width="1"/>';
+    }).join('');
+    var etiquetas = ETQ.map(function(t,i){
+      var x = pl + i*(w - pl*2)/(ETQ.length - 1);
+      return '<text x="'+x.toFixed(0)+'" y="'+(h-5)+'" fill="#93a3b5" font-size="10" font-family="IBM Plex Mono, monospace" text-anchor="'+(i===0?'start':i===ETQ.length-1?'end':'middle')+'">'+t+'</text>';
+    }).join('');
+    var ultimo = VENTAS.length - 1;
+    document.getElementById('grafico').innerHTML =
+      '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="168" role="img" aria-label="Ventas diarias de los últimos 30 días, entre 0,8 y 4,8 millones de pesos">' +
+      '<defs><linearGradient id="gv" x1="0" x2="0" y1="0" y2="1">' +
+      '<stop offset="0%" stop-color="#f0b52a" stop-opacity=".30"/><stop offset="100%" stop-color="#f0b52a" stop-opacity="0"/>' +
+      '</linearGradient></defs>' + rejilla +
+      '<path d="'+area+'" fill="url(#gv)"/>' +
+      '<path d="'+linea+'" fill="none" stroke="#f0b52a" stroke-width="2" stroke-linejoin="round"/>' +
+      '<circle cx="'+px(ultimo).toFixed(1)+'" cy="'+py(VENTAS[ultimo]).toFixed(1)+'" r="3.5" fill="#f0b52a"/>' +
+      '<text x="'+pl+'" y="16" fill="#93a3b5" font-size="10" font-family="IBM Plex Mono, monospace">$4,8 M máx</text>' +
+      etiquetas + '</svg>';
+  })();
+
+  function barras(destino, filas, color){
+    var max = Math.max.apply(null, filas.map(function(f){ return f[1]; }));
+    document.getElementById(destino).innerHTML = filas.map(function(f){
+      return '<div style="margin-bottom:9px">' +
+        '<div style="display:flex;justify-content:space-between;gap:8px;font-size:.78rem;margin-bottom:3px">' +
+        '<span>'+f[0]+'</span><span class="num" style="color:'+color+'">'+f[2]+'</span></div>' +
+        '<div style="height:5px;background:#1b2530;border-radius:99px;overflow:hidden">' +
+        '<i style="display:block;height:100%;width:'+(f[1]/max*100).toFixed(0)+'%;background:'+color+'"></i></div></div>';
+    }).join('');
+  }
+  barras('canales', [
+    ['WhatsApp', 42, '42 %'],
+    ['Portal B2B', 33, '33 %'],
+    ['Mostrador', 20, '20 %'],
+    ['Web', 5, '5 %']
+  ], '#3fae7d');
+  barras('categorias', [
+    ['Herramienta', 38, '38 %'],
+    ['Eléctrico', 30, '30 %'],
+    ['Pinturas', 28, '28 %'],
+    ['Cerámica', 24, '24 %'],
+    ['Cemento', 16, '16 %'],
+    ['Acero', 14, '14 %']
+  ], '#f0b52a');
+})();
+</script>
+
+</body>
+</html>

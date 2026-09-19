@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador de materiales — Ferreteria 360</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📐</text></svg>">
+<link rel="stylesheet" href="assets/base.css">
+<style>
+  .obras { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  @media (max-width: 900px){ #simgrid { grid-template-columns: 1fr !important; } }
+  .obra {
+    padding: 12px; border-radius: var(--radio-s); border: 1px solid var(--linea);
+    background: var(--panel); cursor: pointer; transition: .15s; text-align: left;
+    font-family: inherit; color: var(--texto);
+  }
+  .obra:hover { border-color: var(--acento); }
+  .obra.activa { border-color: var(--acento); background: rgba(245,165,36,.09); }
+  .obra b { display: block; font-size: .87rem; margin-bottom: 2px; }
+  .obra span { font-size: .72rem; color: var(--texto-3); }
+  .memoria { background: var(--tinta); border-radius: var(--radio-s); padding: 13px 15px; border: 1px dashed var(--linea); }
+  .memoria li { font-family: var(--mono); font-size: .78rem; color: var(--texto-2); margin-bottom: 6px; line-height: 1.5; }
+  .reco { padding: 13px 14px; border-radius: var(--radio-s); border: 1px solid var(--linea); background: var(--panel); }
+  .reco + .reco { margin-top: 9px; }
+  .reco-t { font-weight: 650; font-size: .88rem; margin-bottom: 3px; }
+  .reco-d { font-size: .81rem; color: var(--texto-2); }
+  .total-caja {
+    background: linear-gradient(135deg, rgba(245,165,36,.14), rgba(245,165,36,.04));
+    border: 1px solid rgba(245,165,36,.32); border-radius: var(--radio); padding: 17px;
+  }
+  .plegable summary { cursor: pointer; font-size: .85rem; font-weight: 600; color: var(--texto-2); padding: 7px 0; }
+  .plegable summary:hover { color: var(--acento); }
+  @media print { .barra, .nav, #panel, .no-print { display: none !important; } }
+</style>
+</head>
+<body>
+<div id="barra"></div>
+
+<main class="contenedor seccion-s">
+  <span class="etiqueta">Modulo 01</span>
+  <h1 style="margin-top:10px">Simulador de materiales de obra</h1>
+  <p style="max-width:74ch">
+    El cliente entra las medidas y el sistema calcula cuanto material necesita, con la memoria de calculo
+    a la vista y el precio que le corresponde segun su nivel. Diez tipos de obra, formulas de practica
+    colombiana, cantidades redondeadas a la unidad de venta real.
+  </p>
+
+  <div class="grid" id="simgrid" style="grid-template-columns:392px 1fr;align-items:start;margin-top:24px">
+    <!-- ------------------------------------------------- panel izquierdo -->
+    <div>
+      <div class="tarjeta" id="panel">
+        <h3>1. Que va a construir</h3>
+        <div class="obras" id="obras" style="margin:12px 0 20px"></div>
+
+        <h3>2. Medidas y condiciones</h3>
+        <div id="campos" style="margin:12px 0 16px"></div>
+
+        <h3>3. Quien cotiza</h3>
+        <div class="campo" style="margin-top:10px">
+          <select id="cliente"><option value="">Cliente de mostrador (precio de lista)</option></select>
+        </div>
+        <div class="campo-linea" style="margin-bottom:10px">
+          <input type="checkbox" id="mo"><label for="mo" style="margin:0">Incluir estimado de mano de obra</label>
+        </div>
+        <div class="campo-linea">
+          <input type="checkbox" id="herr" checked><label for="herr" style="margin:0">Sugerir herramienta de la obra</label>
+        </div>
+        <button class="boton" id="calcular" style="width:100%;margin-top:14px">Calcular material</button>
+      </div>
+    </div>
+
+    <!-- --------------------------------------------------- resultados --->
+    <div id="resultado"><div class="tarjeta cargando">Elija un tipo de obra y pulse "Calcular material".</div></div>
+  </div>
+</main>
+<div id="pie"></div>
+
+<script type="module">
+import { api, barra, pie, COP, numero, pct, esc, $, aviso } from './assets/app.js';
+
+$('#barra').innerHTML = barra('/simulador');
+$('#pie').innerHTML = pie();
+
+const { obras } = await api.get('/api/obras');
+const { clientes } = await api.get('/api/admin/clientes');
+let obraActual = obras[0];
+let ultimo = null;
+
+$('#cliente').innerHTML += clientes
+  .map((c) => `<option value="${c.id}">${esc(c.nombre)} — ${esc(c.nivelNombre)}</option>`).join('');
+
+function pintarObras() {
+  $('#obras').innerHTML = obras.map((o) => `
+    <button class="obra ${o.id === obraActual.id ? 'activa' : ''}" data-id="${o.id}">
+      <b>${esc(o.nombre)}</b><span>${esc(o.descripcion)}</span>
+    </button>`).join('');
+  document.querySelectorAll('.obra').forEach((b) =>
+    b.addEventListener('click', () => {
+      obraActual = obras.find((o) => o.id === b.dataset.id);
+      pintarObras();
+      pintarCampos();
+    }));
+}
+
+function pintarCampos() {
+  $('#campos').innerHTML = obraActual.campos.map((c) => {
+    if (c.tipo === 'bool') {
+      return `<div class="campo-linea" style="margin-bottom:11px">
+        <input type="checkbox" id="f_${c.id}" ${c.def ? 'checked' : ''}>
+        <label for="f_${c.id}" style="margin:0">${esc(c.label)}</label></div>`;
+    }
+    if (c.tipo === 'select') {
+      return `<div class="campo"><label for="f_${c.id}">${esc(c.label)}</label>
+        <select id="f_${c.id}">${c.opciones.map((o) =>
+          `<option value="${esc(o.valor)}" ${o.valor == c.def ? 'selected' : ''}>${esc(o.texto)}</option>`).join('')}
+        </select></div>`;
+    }
+    return `<div class="campo"><label for="f_${c.id}">${esc(c.label)}</label>
+      <div class="sufijo"><input type="number" step="0.01" id="f_${c.id}" value="${c.def}"
+        ${c.min !== undefined ? `min="${c.min}"` : ''} ${c.max !== undefined ? `max="${c.max}"` : ''}>
+        <span>${esc(c.unidad || '')}</span></div></div>`;
+  }).join('');
+}
+
+function leerEntrada() {
+  const e = {};
+  for (const c of obraActual.campos) {
+    const el = document.getElementById('f_' + c.id);
+    if (!el) continue;
+    e[c.id] = c.tipo === 'bool' ? el.checked : el.value;
+  }
+  return e;
+}
+
+async function calcular() {
+  const btn = $('#calcular');
+  btn.disabled = true; btn.textContent = 'Calculando...';
+  try {
+    const r = await api.post('/api/calcular', {
+      obra: obraActual.id,
+      entrada: leerEntrada(),
+      clienteId: $('#cliente').value || null,
+      incluirManoObra: $('#mo').checked,
+    });
+    ultimo = r;
+    pintarResultado(r);
+  } catch (e) {
+    aviso(e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Calcular material';
+  }
+}
+
+function pintarResultado({ calculo, cotizacion, recomendaciones }) {
+  const t = cotizacion.totales;
+  const conHerr = $('#herr').checked && calculo.herramientas.length;
+
+  const filas = cotizacion.lineas.map((l) => `
+    <tr>
+      <td><div class="mini negro" style="font-weight:600">${esc(l.nombre)}</div>
+        <div class="micro">${esc(l.motivo)}</div></td>
+      <td class="num">${numero(l.cantidad, 2)} <span class="micro">${esc(l.unidad)}</span></td>
+      <td class="num">${COP(l.precioUnit)}</td>
+      <td class="num negro">${COP(l.subtotal)}</td>
+      <td class="centrado">${l.disponible
+        ? '<span class="etiqueta verde">hay</span>'
+        : `<span class="etiqueta roja">faltan ${numero(l.faltante, 1)}</span>`}</td>
+    </tr>`).join('');
+
+  $('#resultado').innerHTML = `
+    <div class="tarjeta">
+      <div class="fila-sb wrap">
+        <div>
+          <span class="etiqueta cian">${esc(calculo.obra.nombre)}</span>
+          <h2 style="margin:10px 0 0">Lista de materiales</h2>
+        </div>
+        <div class="fila no-print">
+          <button class="boton fantasma s" id="btn-pdf">Imprimir / PDF</button>
+          <button class="boton s" id="btn-guardar">Guardar cotizacion</button>
+        </div>
+      </div>
+
+      <div class="grid g4" style="margin:18px 0">
+        ${calculo.resumen.map((r) => `<div class="tarjeta-plana" style="padding:12px 14px">
+          <div class="kpi-label">${esc(r.etiqueta)}</div>
+          <div style="font-size:1.15rem;font-weight:750;margin-top:2px">${typeof r.valor === 'number' ? numero(r.valor, 3) : esc(String(r.valor))}
+            <span class="micro">${esc(r.unidad || '')}</span></div>
+        </div>`).join('')}
+      </div>
+
+      <table>
+        <thead><tr><th>Material</th><th class="der">Cantidad</th><th class="der">Unitario</th><th class="der">Subtotal</th><th class="centrado">Bodega</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+
+      ${conHerr ? `<details class="plegable" style="margin-top:12px"><summary>Herramienta sugerida para esta obra (${calculo.herramientas.length}) — no incluida en el total</summary>
+        <ul class="lista-limpia mini" style="padding:8px 0 0">
+          ${calculo.herramientas.map((h) => `<li>&bull; ${esc(h.motivo)} — <span class="mono">${esc(h.sku)}</span> x ${h.cantidad}</li>`).join('')}
+        </ul></details>` : ''}
+
+      <div class="total-caja" style="margin-top:18px">
+        <div class="fila-sb"><span class="mini">Materiales a precio de lista</span><span class="mono">${COP(t.bruto)}</span></div>
+        ${t.descuento > 0 ? `<div class="fila-sb"><span class="mini">Descuento ${esc(cotizacion.nivel.nombre)} (${pct(cotizacion.nivel.descuento, 0)})</span>
+          <span class="mono" style="color:var(--verde)">-${COP(t.descuento)}</span></div>` : ''}
+        ${t.manoObra > 0 ? `<div class="fila-sb"><span class="mini">Mano de obra estimada (${numero(calculo.manoObra.cantidad, 2)} ${esc(calculo.manoObra.unidad)})</span>
+          <span class="mono">${COP(t.manoObra)}</span></div>` : ''}
+        <hr class="separador" style="margin:11px 0">
+        <div class="fila-sb">
+          <span style="font-weight:700">Total ${t.manoObra ? 'obra' : 'materiales'}</span>
+          <span style="font-size:1.55rem;font-weight:800" class="acento">${COP(t.total)}</span>
+        </div>
+        <div class="micro" style="margin-top:5px">Incluye IVA (base ${COP(t.baseGravable)} + IVA ${COP(t.iva)}).
+          ${esc(cotizacion.domicilio.mensaje)}</div>
+      </div>
+
+      ${t.manoObra > 0 ? `<p class="micro" style="margin:10px 0 0">Rendimiento de referencia: ${esc(calculo.manoObra.rendimiento)}.
+        La mano de obra es un estimado de mercado, no un servicio que preste la ferreteria.</p>` : ''}
+
+      <details class="plegable" style="margin-top:16px">
+        <summary>Ver memoria de calculo (${calculo.memoria.length} pasos)</summary>
+        <div class="memoria" style="margin-top:8px">
+          <ol style="margin:0;padding-left:18px">${calculo.memoria.map((m) => `<li>${esc(m)}</li>`).join('')}</ol>
+        </div>
+      </details>
+
+      ${calculo.advertencias.length ? `<div class="aviso" style="margin-top:14px">
+        <b>Notas tecnicas</b><ul style="margin:6px 0 0;padding-left:18px">
+        ${calculo.advertencias.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></div>` : ''}
+    </div>
+
+    <div class="tarjeta" style="margin-top:16px">
+      <div class="fila" style="margin-bottom:6px">
+        <span class="etiqueta morada">Asistente de la ferreteria</span>
+      </div>
+      <h3>Lo que le recomiendo para esta obra</h3>
+      <p class="mini" style="margin-bottom:14px">Generado sobre su carrito real, el stock del momento y su historial de compra.</p>
+      ${recomendaciones.map((r) => `
+        <div class="reco">
+          <div class="fila-sb" style="align-items:flex-start">
+            <div style="flex:1">
+              <div class="reco-t">${esc(r.titulo)}</div>
+              <div class="reco-d">${esc(r.detalle)}</div>
+            </div>
+            <div style="text-align:right;flex:0 0 auto;margin-left:12px">
+              <span class="etiqueta ${{ahorro:'verde',disponibilidad:'roja',complemento:'',nivel:'morada',logistica:'cian',tecnica:'gris',historial:'gris',oportunidad:'cian'}[r.tipo] || 'gris'}">${esc(r.tipo)}</span>
+              ${r.impacto ? `<div class="mono micro" style="margin-top:5px">${esc(r.impacto)}</div>` : ''}
+            </div>
+          </div>
+        </div>`).join('') || '<p class="nada">Sin sugerencias para este calculo.</p>'}
+    </div>`;
+
+  $('#btn-pdf').addEventListener('click', () => window.print());
+  $('#btn-guardar').addEventListener('click', guardar);
+}
+
+async function guardar() {
+  if (!ultimo) return;
+  try {
+    const r = await api.post('/api/cotizaciones', {
+      items: ultimo.calculo.items,
+      clienteId: $('#cliente').value || null,
+      incluirManoObra: $('#mo').checked,
+      manoObra: ultimo.calculo.manoObra,
+      origen: 'simulador',
+      meta: { obra: ultimo.calculo.obra.nombre },
+    });
+    aviso(`Cotizacion ${r.cotizacion.id} guardada. Vigente hasta ${r.cotizacion.vence}.`, 'ok');
+  } catch (e) {
+    aviso(e.message, 'error');
+  }
+}
+
+$('#calcular').addEventListener('click', calcular);
+pintarObras();
+pintarCampos();
+calcular();
+</script>
+</body>
+</html>
